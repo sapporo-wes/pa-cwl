@@ -1,0 +1,6 @@
+# Example: Fetch FASTQ files using fasterq-dump (SRA-tools)
+# Use this when FTP downloads are unavailable or slow
+accessions:
+  - SRR1039508
+  - SRR1039509
+download_method: sratools

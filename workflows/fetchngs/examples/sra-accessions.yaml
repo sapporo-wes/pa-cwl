@@ -1,0 +1,8 @@
+# Example: Fetch FASTQ files for SRA accessions via FTP
+# These are small RNA-seq samples from E. coli for quick testing
+accessions:
+  - SRR1039508
+  - SRR1039509
+  - SRR1039512
+  - SRR1039513
+download_method: ftp

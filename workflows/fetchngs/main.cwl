@@ -5,12 +5,15 @@ class: Workflow
 label: "fetchngs - Fetch sequencing data from public repositories"
 doc: |
   Downloads FASTQ files and metadata from SRA/ENA/DDBJ given accession numbers.
+  Supports FTP download with md5 verification, or SRA-tools fasterq-dump.
+  Produces a samplesheet CSV compatible with downstream pa-cwl analysis workflows.
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
 requirements:
   SubworkflowFeatureRequirement: {}
   ScatterFeatureRequirement: {}
   InlineJavascriptRequirement: {}
+  MultipleInputFeatureRequirement: {}
 
 inputs:
   accessions:
@@ -20,31 +23,61 @@ inputs:
   download_method:
     type:
       type: enum
-      symbols: [fasterq-dump, wget, aspera]
-    default: fasterq-dump
-    doc: "Download method to use"
-
-  output_format:
-    type:
-      type: enum
-      symbols: [fastq, bam]
-    default: fastq
-    doc: "Output format"
+      symbols:
+        - ftp
+        - sratools
+    default: ftp
+    doc: "Download method: ftp (wget with md5 verification) or sratools (fasterq-dump)"
 
 steps:
-  # TODO: Implement steps
-  # - fetch_metadata: query NCBI/ENA for run metadata
-  # - download_reads: download FASTQ/BAM files per accession
-  # - validate_downloads: verify checksums
-  []
+  fetch_metadata:
+    run: steps/fetch-ena-metadata.cwl
+    in:
+      accessions: accessions
+    out: [metadata_json, metadata_tsv]
+    doc: "Query ENA API for run metadata and FTP download URLs"
+
+  download_ftp:
+    run: steps/download-fastq-ftp.cwl
+    when: $(inputs.download_method == "ftp")
+    in:
+      metadata_json: fetch_metadata/metadata_json
+      download_method: download_method
+    out: [fastq_files]
+    doc: "Download FASTQ files via FTP with md5 verification"
+
+  download_sratools:
+    run: steps/download-sratools.cwl
+    when: $(inputs.download_method == "sratools")
+    scatter: accession
+    in:
+      accession: accessions
+      download_method: download_method
+    out: [fastq_files]
+    doc: "Download FASTQ files via fasterq-dump"
+
+  generate_samplesheet:
+    run: steps/generate-samplesheet.cwl
+    in:
+      metadata_json: fetch_metadata/metadata_json
+    out: [samplesheet]
+    doc: "Generate samplesheet CSV from metadata"
 
 outputs:
   fastq_files:
     type: File[]
+    outputSource:
+      - download_ftp/fastq_files
+      - download_sratools/fastq_files
+    pickValue: first_non_null
     doc: "Downloaded FASTQ files"
-    outputSource: []  # TODO: wire to download step
+
+  samplesheet:
+    type: File
+    outputSource: generate_samplesheet/samplesheet
+    doc: "Samplesheet CSV for downstream workflows"
 
   run_metadata:
     type: File
-    doc: "TSV file with run metadata"
-    outputSource: []  # TODO: wire to metadata step
+    outputSource: fetch_metadata/metadata_tsv
+    doc: "TSV file with run metadata from ENA"

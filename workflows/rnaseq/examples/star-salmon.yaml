@@ -1,0 +1,40 @@
+# Example: STAR + Salmon pipeline (default)
+# Human paired-end RNA-seq with fastp trimming
+
+fastq_fwd:
+  - class: File
+    path: /path/to/sample1_R1.fastq.gz
+  - class: File
+    path: /path/to/sample2_R1.fastq.gz
+  - class: File
+    path: /path/to/sample3_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: /path/to/sample1_R2.fastq.gz
+  - class: File
+    path: /path/to/sample2_R2.fastq.gz
+  - class: File
+    path: /path/to/sample3_R2.fastq.gz
+
+sample_ids:
+  - sample1
+  - sample2
+  - sample3
+
+genome_fasta:
+  class: File
+  path: /path/to/GRCh38.primary_assembly.genome.fa
+
+gtf:
+  class: File
+  path: /path/to/gencode.v44.primary_assembly.annotation.gtf
+
+transcriptome_fasta:
+  class: File
+  path: /path/to/gencode.v44.transcripts.fa
+
+aligner: star
+quantifier: salmon
+trimmer: fastp
+strandedness: unstranded
