@@ -1,0 +1,176 @@
+# pa-cwl agent.yaml JSON Schema
+# Defines the structure for AI-agent instruction files shipped with each workflow
+$schema: "http://json-schema.org/draft-07/schema#"
+title: "pa-cwl Agent Specification"
+description: "Machine-readable instructions for AI agents to discover, configure, and execute pa-cwl workflows via WES"
+type: object
+required:
+  - workflow
+  - description
+  - use_cases
+  - inputs
+  - outputs
+  - execution_plan
+  - wes
+
+properties:
+  workflow:
+    type: string
+    description: "Workflow identifier (matches directory name under workflows/)"
+
+  description:
+    type: string
+    description: "Human/agent-readable description of what the workflow does"
+
+  use_cases:
+    type: array
+    items:
+      type: string
+    description: "List of natural language use cases this workflow addresses"
+
+  inputs:
+    type: array
+    items:
+      $ref: "#/definitions/input_parameter"
+    description: "Workflow input parameters"
+
+  outputs:
+    type: array
+    items:
+      $ref: "#/definitions/output_parameter"
+    description: "Workflow output files/values"
+
+  execution_plan:
+    $ref: "#/definitions/execution_plan"
+    description: "Structured step-by-step plan for agents to follow"
+
+  hints:
+    type: string
+    description: "Natural language guidance for edge cases, user interaction, and troubleshooting"
+
+  wes:
+    $ref: "#/definitions/wes_config"
+
+  dependencies:
+    type: array
+    items:
+      type: string
+    description: "Other pa-cwl workflows that should be run before this one (e.g., fetchngs)"
+
+definitions:
+  input_parameter:
+    type: object
+    required:
+      - id
+      - type
+      - description
+    properties:
+      id:
+        type: string
+      type:
+        type: string
+        description: "CWL type expression (e.g., File, string, File[], enum)"
+      description:
+        type: string
+      required:
+        type: boolean
+        default: true
+      default:
+        description: "Default value if not provided by user"
+      options:
+        type: array
+        items:
+          type: string
+        description: "Valid options for enum types"
+      resolve_from:
+        type: array
+        items:
+          type: string
+          enum:
+            - local_path
+            - sra_accession
+            - https_url
+            - s3_uri
+            - gcp_uri
+            - dra_accession
+        description: "Strategies for resolving this input from user-provided references"
+
+  output_parameter:
+    type: object
+    required:
+      - id
+      - type
+      - description
+    properties:
+      id:
+        type: string
+      type:
+        type: string
+      description:
+        type: string
+
+  execution_plan:
+    type: object
+    required:
+      - steps
+    properties:
+      steps:
+        type: array
+        items:
+          $ref: "#/definitions/execution_step"
+
+  execution_step:
+    type: object
+    required:
+      - id
+      - action
+      - description
+    properties:
+      id:
+        type: string
+      action:
+        type: string
+        enum:
+          - ask_user
+          - resolve_input
+          - select_option
+          - chain_workflow
+          - generate_input_object
+          - submit_wes
+          - poll_status
+          - retrieve_outputs
+          - validate_outputs
+          - report_to_user
+      description:
+        type: string
+      condition:
+        type: string
+        description: "Condition under which this step is executed (evaluated as a simple expression)"
+      parameters:
+        type: object
+        description: "Action-specific parameters"
+
+  wes_config:
+    type: object
+    required:
+      - tested_engines
+    properties:
+      tested_engines:
+        type: array
+        items:
+          type: string
+      resource_hints:
+        type: object
+        properties:
+          min_ram_gb:
+            type: number
+          min_cores:
+            type: integer
+          estimated_storage_gb:
+            type: number
+      workflow_type:
+        type: string
+        default: "CWL"
+      workflow_type_version:
+        type: string
+        default: "v1.2"

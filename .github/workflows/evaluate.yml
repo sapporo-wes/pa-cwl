@@ -1,0 +1,102 @@
+name: Evaluate Workflow Run RO-Crate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "workflows/*/tests/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "workflows/**"
+
+jobs:
+  validate-cwl:
+    name: Validate CWL
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install cwltool
+        run: pip install cwltool
+
+      - name: Validate all CWL files
+        run: |
+          find workflows/ tools/ -name "*.cwl" -print0 | while IFS= read -r -d '' cwl_file; do
+            echo "Validating: ${cwl_file}"
+            cwltool --validate "${cwl_file}"
+          done
+
+  validate-agent-yaml:
+    name: Validate agent.yaml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install jsonschema pyyaml
+
+      - name: Validate agent.yaml files
+        run: |
+          python -c "
+          import yaml, jsonschema, glob, sys
+
+          with open('schemas/agent-spec.schema.yaml') as f:
+              schema = yaml.safe_load(f)
+
+          errors = []
+          for agent_file in glob.glob('workflows/*/agent.yaml'):
+              with open(agent_file) as f:
+                  doc = yaml.safe_load(f)
+              try:
+                  jsonschema.validate(doc, schema)
+                  print(f'OK: {agent_file}')
+              except jsonschema.ValidationError as e:
+                  errors.append(f'FAIL: {agent_file}: {e.message}')
+                  print(f'FAIL: {agent_file}: {e.message}')
+
+          if errors:
+              sys.exit(1)
+          "
+
+  evaluate-ro-crate:
+    name: Evaluate RO-Crate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install rocrate
+
+      - name: Evaluate Workflow Run RO-Crates
+        run: |
+          for crate_dir in workflows/*/tests/ro-crate/; do
+            if [ -d "${crate_dir}" ]; then
+              echo "Evaluating RO-Crate: ${crate_dir}"
+              python -c "
+          from rocrate.rocrate import ROCrate
+          crate = ROCrate('${crate_dir}')
+          # Verify crate is readable and has expected structure
+          print(f'  Root dataset: {crate.root_dataset.id}')
+          print(f'  Entities: {len(list(crate.get_entities()))}')
+          for e in crate.get_entities():
+              print(f'    - {e.id} ({e.type})')
+          "
+            fi
+          done
+          echo "RO-Crate evaluation complete"

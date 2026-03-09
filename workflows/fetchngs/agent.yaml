@@ -1,0 +1,106 @@
+workflow: fetchngs
+description: |
+  Fetch sequencing data from public repositories. Given SRA/ENA/DDBJ
+  accessions, downloads FASTQ files and associated metadata. This is
+  typically chained before analysis workflows (rnaseq, sarek, etc.)
+  to resolve public data into local files.
+
+use_cases:
+  - "Download FASTQ files from SRA given accession numbers"
+  - "Fetch sequencing data from ENA or DDBJ"
+  - "Prepare public data as input for downstream analysis workflows"
+
+inputs:
+  - id: accessions
+    type: "string[]"
+    description: "List of SRA/ENA/DDBJ accession numbers (e.g., SRR12345678, ERR1234567, DRR012345)"
+    required: true
+    resolve_from:
+      - sra_accession
+      - dra_accession
+
+  - id: output_format
+    type: enum
+    description: "Output format for downloaded reads"
+    options: [fastq, bam]
+    default: fastq
+
+  - id: download_method
+    type: enum
+    description: "Tool to use for downloading"
+    options: [fasterq-dump, wget, aspera]
+    default: fasterq-dump
+
+outputs:
+  - id: fastq_files
+    type: "File[]"
+    description: "Downloaded FASTQ files (paired-end reads as R1/R2)"
+
+  - id: run_metadata
+    type: File
+    description: "TSV file with metadata for each run (organism, library layout, etc.)"
+
+execution_plan:
+  steps:
+    - id: collect_accessions
+      action: ask_user
+      description: "Ask the user for SRA/ENA/DDBJ accession numbers"
+      parameters:
+        prompt: "Please provide the accession numbers you want to fetch (e.g., SRR12345678). You can provide multiple accessions separated by commas or as a list."
+
+    - id: validate_accessions
+      action: resolve_input
+      description: "Validate accession format and check availability via NCBI/ENA API"
+      parameters:
+        input_id: accessions
+        validation: "regex:^[SED]RR\\d+$"
+
+    - id: select_method
+      action: select_option
+      description: "Select download method based on user preference or network conditions"
+      parameters:
+        input_id: download_method
+        default: fasterq-dump
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML from resolved parameters"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit fetchngs workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/fetchngs/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status until completion"
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve downloaded FASTQ files and metadata"
+
+    - id: report
+      action: report_to_user
+      description: "Report downloaded files, sizes, and metadata summary to user"
+
+hints: |
+  - If the user provides a BioProject accession (PRJNA/PRJEB/PRJDB), first query
+    NCBI/ENA to resolve it to individual run accessions before proceeding.
+  - For large numbers of accessions (>50), suggest batching to avoid timeout.
+  - aspera is faster but requires Aspera CLI; fasterq-dump is more universally available.
+  - Check available disk space before downloading — estimate ~3-5 GB per WGS run.
+  - If downloads fail, suggest retrying with a different download_method.
+
+wes:
+  tested_engines:
+    - cwltool
+    - toil
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 4
+    min_cores: 2
+    estimated_storage_gb: 50
+
+dependencies: []

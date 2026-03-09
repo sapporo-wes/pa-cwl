@@ -1,0 +1,171 @@
+workflow: rnaseq
+description: |
+  RNA-seq analysis pipeline. Supports multiple aligners (STAR, HISAT2)
+  and quantification tools (Salmon, RSEM, kallisto). Performs QC with
+  FastQC/MultiQC, trimming with fastp/Trim Galore, and generates
+  gene-level and transcript-level count matrices.
+
+use_cases:
+  - "Quantify gene expression from paired-end or single-end RNA-seq FASTQ files"
+  - "Process public RNA-seq data from SRA for differential expression analysis"
+  - "Compare aligner/quantifier combinations on the same dataset"
+  - "Generate QC reports for RNA-seq experiments"
+
+inputs:
+  - id: fastq_pairs
+    type: "record{sample_id: string, fwd: File, rev: File?}[]"
+    description: "Input FASTQ files. For paired-end: provide fwd and rev. For single-end: provide fwd only."
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+      - https_url
+      - s3_uri
+
+  - id: genome_reference
+    type: enum
+    description: "Reference genome to use for alignment"
+    options: [GRCh38, GRCh37, GRCm39, GRCm38, custom]
+    default: GRCh38
+
+  - id: custom_genome_fasta
+    type: File
+    description: "Custom genome FASTA file (required if genome_reference is 'custom')"
+    required: false
+
+  - id: custom_gtf
+    type: File
+    description: "Custom GTF annotation file (required if genome_reference is 'custom')"
+    required: false
+
+  - id: aligner
+    type: enum
+    description: "Alignment tool"
+    options: [star, hisat2]
+    default: star
+
+  - id: quantifier
+    type: enum
+    description: "Quantification tool"
+    options: [salmon, rsem, kallisto]
+    default: salmon
+
+  - id: trimmer
+    type: enum
+    description: "Read trimming tool"
+    options: [fastp, trim_galore, skip]
+    default: fastp
+
+  - id: strandedness
+    type: enum
+    description: "Library strandedness"
+    options: [unstranded, forward, reverse, auto]
+    default: auto
+
+outputs:
+  - id: gene_counts
+    type: File
+    description: "Gene-level count matrix (TSV)"
+
+  - id: transcript_counts
+    type: File
+    description: "Transcript-level count matrix (TSV)"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report summarizing all QC metrics"
+
+  - id: aligned_bams
+    type: "File[]"
+    description: "Sorted, indexed BAM files per sample"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask the user for FASTQ files or SRA accessions and organism"
+      parameters:
+        prompt: "Please provide your RNA-seq samples (FASTQ file paths or SRA accessions) and the organism (human, mouse, or custom genome)."
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve input references to files. If SRA accessions, chain fetchngs first."
+      condition: "inputs contain SRA accessions"
+      parameters:
+        chain_workflow: fetchngs
+
+    - id: determine_genome
+      action: select_option
+      description: "Map organism to genome reference"
+      parameters:
+        input_id: genome_reference
+        mapping:
+          human: GRCh38
+          mouse: GRCm39
+
+    - id: ask_preferences
+      action: ask_user
+      description: "Ask user about aligner/quantifier preference, or use defaults"
+      parameters:
+        prompt: "Which aligner and quantifier would you like? Defaults: STAR + Salmon. Options: STAR/HISAT2 for alignment, Salmon/RSEM/kallisto for quantification."
+        skip_if: "user has not expressed preference"
+
+    - id: detect_strandedness
+      action: resolve_input
+      description: "If strandedness is 'auto', infer from a subsample of reads"
+      condition: "strandedness == auto"
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML with all resolved parameters"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit rnaseq workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/rnaseq/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status. RNA-seq can take hours for large datasets."
+      parameters:
+        poll_interval_seconds: 60
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve count matrices, BAMs, and QC report"
+
+    - id: validate
+      action: validate_outputs
+      description: "Check that gene_counts has expected number of samples as columns"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with links to count matrices and MultiQC report. Suggest next steps (e.g., differential expression with differentialabundance workflow)."
+
+hints: |
+  - If the user provides SRA accessions instead of FASTQ files, run the fetchngs
+    workflow first to download the data, then feed the outputs into this workflow.
+  - For organisms other than human/mouse, the user must provide custom genome FASTA
+    and GTF files. Prompt them for these if genome_reference is set to 'custom'.
+  - STAR requires ~32 GB RAM for human genome indexing. Ensure the WES endpoint
+    has sufficient resources. HISAT2 is lighter (~8 GB).
+  - kallisto does pseudo-alignment (no BAM output). Warn the user if they need BAMs.
+  - If strandedness is unknown, the pipeline can auto-detect using a subsample. This
+    adds ~10 minutes but avoids incorrect quantification.
+  - For large experiments (>20 samples), suggest the user checks disk space and
+    consider whether they need BAM files (can skip to save space).
+
+wes:
+  tested_engines:
+    - cwltool
+    - toil
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 32
+    min_cores: 8
+    estimated_storage_gb: 200
+
+dependencies:
+  - fetchngs
