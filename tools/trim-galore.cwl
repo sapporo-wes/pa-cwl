@@ -6,11 +6,13 @@ label: "Trim Galore - Adapter and quality trimming"
 doc: "Wrapper around Cutadapt and FastQC for adapter/quality trimming"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/trim-galore:0.6.10--hdfd78af_0"
   ResourceRequirement:
     coresMin: 4
     ramMin: 4096
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/trim-galore:0.6.10--hdfd78af_0"
 
 baseCommand: [trim_galore]
 

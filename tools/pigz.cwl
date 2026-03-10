@@ -6,14 +6,16 @@ label: "pigz - Parallel gzip compression"
 doc: "Compress files with gzip in parallel"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/pigz:2.8--h2797004_0"
   ResourceRequirement:
     coresMin: 4
     ramMin: 1024
   InitialWorkDirRequirement:
     listing:
       - $(inputs.input_file)
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/pigz:2.8--h2797004_0"
 
 baseCommand: [pigz]
 

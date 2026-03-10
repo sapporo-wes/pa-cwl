@@ -6,11 +6,13 @@ label: "STAR - Spliced-aware RNA-seq aligner"
 doc: "Align RNA-seq reads to a reference genome using STAR"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/star:2.7.11b--h43eeafb_0"
   ResourceRequirement:
     coresMin: 8
     ramMin: 32768
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/star:2.7.11b--h43eeafb_0"
 
 baseCommand: [STAR]
 

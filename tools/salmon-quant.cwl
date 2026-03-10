@@ -6,11 +6,13 @@ label: "Salmon quant - Transcript quantification"
 doc: "Quantify transcript abundance using Salmon"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/salmon:1.10.3--h6dccd9a_1"
   ResourceRequirement:
     coresMin: 8
     ramMin: 8192
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/salmon:1.10.3--h6dccd9a_1"
 
 baseCommand: [salmon, quant]
 

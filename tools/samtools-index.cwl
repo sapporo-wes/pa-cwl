@@ -6,14 +6,16 @@ label: "samtools index - Index BAM file"
 doc: "Create BAI index for a sorted BAM file"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
   ResourceRequirement:
     coresMin: 2
     ramMin: 1024
   InitialWorkDirRequirement:
     listing:
       - $(inputs.sorted_bam)
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
 
 baseCommand: [samtools, index]
 

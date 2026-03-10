@@ -6,8 +6,6 @@ label: "Download FASTQ via SRA-tools"
 doc: "Download FASTQ files for multiple accessions using fasterq-dump and compress"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/sra-tools:3.0.10--h9f5acd7_0"
   ResourceRequirement:
     coresMin: 4
     ramMin: 4096
@@ -31,6 +29,10 @@ requirements:
           done < "$2"
       - entryname: accessions.txt
         entry: $(inputs.accessions.join("\n"))
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/sra-tools:3.0.10--h9f5acd7_0"
 
 baseCommand: [bash, download_all.sh]
 

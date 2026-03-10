@@ -6,11 +6,13 @@ label: "kallisto index - Build kallisto index"
 doc: "Build a kallisto index from a FASTA file of target sequences"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/kallisto:0.50.1--h6de1650_2"
   ResourceRequirement:
     coresMin: 1
     ramMin: 8192
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/kallisto:0.50.1--h6de1650_2"
 
 baseCommand: [kallisto, index]
 

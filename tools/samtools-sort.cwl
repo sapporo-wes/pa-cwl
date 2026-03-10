@@ -6,11 +6,13 @@ label: "samtools sort - Sort BAM file"
 doc: "Sort BAM file by coordinate"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
   ResourceRequirement:
     coresMin: 4
     ramMin: 4096
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
 
 baseCommand: [samtools, sort]
 

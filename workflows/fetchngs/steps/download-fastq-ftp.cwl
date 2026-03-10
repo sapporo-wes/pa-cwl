@@ -6,8 +6,6 @@ label: "Download FASTQ via FTP"
 doc: "Download FASTQ files from ENA FTP and verify checksums"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "python:3.12-slim"
   ResourceRequirement:
     coresMin: 2
     ramMin: 2048
@@ -49,17 +47,15 @@ requirements:
               print(f"  MD5 verified: {filepath}")
               return True
 
-          def main():
-              with open(sys.argv[1]) as f:
-                  metadata = json.load(f)
-
-              ftp_urls = metadata.get("fastq_ftp", "").split(";")
-              md5sums = metadata.get("fastq_md5", "").split(";")
-              accession = metadata.get("run_accession", "unknown")
+          def download_record(record):
+              """Download FASTQ files for a single record."""
+              ftp_urls = record.get("fastq_ftp", "").split(";")
+              md5sums = record.get("fastq_md5", "").split(";")
+              accession = record.get("run_accession", "unknown")
 
               if not ftp_urls or not ftp_urls[0]:
                   print(f"No FTP URLs found for {accession}", file=sys.stderr)
-                  sys.exit(1)
+                  return
 
               for i, url in enumerate(ftp_urls):
                   if not url:
@@ -71,8 +67,20 @@ requirements:
 
               print(f"Completed download for {accession}: {len(ftp_urls)} file(s)")
 
+          def main():
+              with open(sys.argv[1]) as f:
+                  metadata = json.load(f)
+
+              records = metadata if isinstance(metadata, list) else [metadata]
+              for record in records:
+                  download_record(record)
+
           if __name__ == "__main__":
               main()
+
+hints:
+  DockerRequirement:
+    dockerPull: "python:3.12-slim"
 
 baseCommand: [python3, download_ftp.py]
 

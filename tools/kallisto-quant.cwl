@@ -6,11 +6,13 @@ label: "kallisto quant - Pseudoalignment-based quantification"
 doc: "Quantify transcript abundance using kallisto pseudoalignment"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/kallisto:0.50.1--h6de1650_2"
   ResourceRequirement:
     coresMin: 4
     ramMin: 4096
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/kallisto:0.50.1--h6de1650_2"
 
 baseCommand: [kallisto, quant]
 

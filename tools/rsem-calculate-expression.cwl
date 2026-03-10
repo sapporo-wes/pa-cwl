@@ -6,11 +6,13 @@ label: "RSEM calculate-expression - Quantify gene/isoform expression"
 doc: "Estimate gene and isoform expression levels from RNA-seq data"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/rsem:1.3.3--h93d5f22_6"
   ResourceRequirement:
     coresMin: 8
     ramMin: 16384
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/rsem:1.3.3--h93d5f22_6"
 
 baseCommand: [rsem-calculate-expression]
 

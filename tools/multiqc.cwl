@@ -6,13 +6,15 @@ label: "MultiQC - Aggregate analysis reports"
 doc: "Aggregate results from multiple tools into a single HTML report"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/multiqc:1.21--pyhdfd78af_0"
   ResourceRequirement:
     coresMin: 1
     ramMin: 2048
   InitialWorkDirRequirement:
     listing: $(inputs.report_files)
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/multiqc:1.21--pyhdfd78af_0"
 
 baseCommand: [multiqc]
 

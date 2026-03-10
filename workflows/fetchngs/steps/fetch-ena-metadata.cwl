@@ -9,8 +9,6 @@ doc: |
   FTP download URLs and md5 checksums.
 
 requirements:
-  DockerRequirement:
-    dockerPull: "python:3.12-slim"
   ResourceRequirement:
     coresMin: 1
     ramMin: 1024
@@ -88,6 +86,10 @@ requirements:
               main()
       - entryname: accessions.txt
         entry: $(inputs.accessions.join("\n"))
+
+hints:
+  DockerRequirement:
+    dockerPull: "python:3.12-slim"
 
 baseCommand: [python3, fetch_metadata.py, accessions.txt]
 

@@ -6,12 +6,14 @@ label: "HISAT2 - Spliced-aware aligner"
 doc: "Align RNA-seq reads using HISAT2 with lower memory footprint"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/hisat2:2.2.1--h87f3376_4"
   ResourceRequirement:
     coresMin: 8
     ramMin: 8192
   ShellCommandRequirement: {}
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/hisat2:2.2.1--h87f3376_4"
 
 baseCommand: [hisat2]
 

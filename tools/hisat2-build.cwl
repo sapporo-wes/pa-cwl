@@ -6,11 +6,13 @@ label: "HISAT2-build - Build HISAT2 genome index"
 doc: "Generate HISAT2 genome index from reference FASTA"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/hisat2:2.2.1--h87f3376_4"
   ResourceRequirement:
     coresMin: 8
     ramMin: 8192
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/hisat2:2.2.1--h87f3376_4"
 
 baseCommand: [hisat2-build]
 

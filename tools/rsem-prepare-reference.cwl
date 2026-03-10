@@ -6,8 +6,6 @@ label: "RSEM prepare-reference - Build RSEM reference"
 doc: "Prepare reference for RSEM quantification"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/rsem:1.3.3--h93d5f22_6"
   ResourceRequirement:
     coresMin: 4
     ramMin: 16384
@@ -16,6 +14,10 @@ requirements:
       - entryname: rsem_ref
         writable: true
         entry: "$({class: 'Directory', listing: []})"
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/rsem:1.3.3--h93d5f22_6"
 
 baseCommand: [rsem-prepare-reference]
 

@@ -6,11 +6,13 @@ label: "featureCounts - Read counting"
 doc: "Count reads mapped to genomic features using Subread featureCounts"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/subread:2.0.6--he4a0461_1"
   ResourceRequirement:
     coresMin: 4
     ramMin: 4096
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/subread:2.0.6--he4a0461_1"
 
 baseCommand: [featureCounts]
 

@@ -8,8 +8,6 @@ doc: |
   or kallisto abundance.tsv) into gene-level and transcript-level count matrices.
 
 requirements:
-  DockerRequirement:
-    dockerPull: "python:3.12-slim"
   ResourceRequirement:
     coresMin: 1
     ramMin: 4096
@@ -120,6 +118,10 @@ requirements:
 
           if __name__ == "__main__":
               main()
+
+hints:
+  DockerRequirement:
+    dockerPull: "python:3.12-slim"
 
 baseCommand: [python3, aggregate.py]
 

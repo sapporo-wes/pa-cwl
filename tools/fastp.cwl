@@ -6,11 +6,13 @@ label: "fastp - Fast all-in-one FASTQ preprocessor"
 doc: "Quality trimming, adapter removal, and QC for FASTQ files"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/fastp:0.23.4--hadf994f_0"
   ResourceRequirement:
     coresMin: 4
     ramMin: 4096
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/fastp:0.23.4--hadf994f_0"
 
 baseCommand: [fastp]
 

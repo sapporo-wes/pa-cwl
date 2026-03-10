@@ -6,11 +6,13 @@ label: "FastQC - Quality control for sequencing reads"
 doc: "Generates quality control reports for FASTQ files"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0"
   ResourceRequirement:
     coresMin: 1
     ramMin: 1024
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0"
 
 baseCommand: [fastqc]
 

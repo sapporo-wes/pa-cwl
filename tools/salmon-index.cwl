@@ -6,11 +6,13 @@ label: "Salmon index - Build Salmon transcriptome index"
 doc: "Generate Salmon index from transcriptome FASTA"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/salmon:1.10.3--h6dccd9a_1"
   ResourceRequirement:
     coresMin: 8
     ramMin: 16384
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/salmon:1.10.3--h6dccd9a_1"
 
 baseCommand: [salmon, index]
 

@@ -8,8 +8,6 @@ doc: |
   from ENA metadata and downloaded FASTQ files.
 
 requirements:
-  DockerRequirement:
-    dockerPull: "python:3.12-slim"
   ResourceRequirement:
     coresMin: 1
     ramMin: 512
@@ -82,6 +80,10 @@ requirements:
 
           if __name__ == "__main__":
               main()
+
+hints:
+  DockerRequirement:
+    dockerPull: "python:3.12-slim"
 
 baseCommand: [python3, generate_samplesheet.py]
 

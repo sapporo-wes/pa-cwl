@@ -6,11 +6,13 @@ label: "Picard MarkDuplicates - Mark PCR duplicates"
 doc: "Identify and mark duplicate reads in BAM files"
 
 requirements:
-  DockerRequirement:
-    dockerPull: "quay.io/biocontainers/picard:3.1.1--hdfd78af_0"
   ResourceRequirement:
     coresMin: 1
     ramMin: 8192
+
+hints:
+  DockerRequirement:
+    dockerPull: "quay.io/biocontainers/picard:3.1.1--hdfd78af_0"
 
 baseCommand: [picard, MarkDuplicates]
 
