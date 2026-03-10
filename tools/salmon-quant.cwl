@@ -56,29 +56,26 @@ arguments:
     valueFrom: $(runtime.cores)
   - prefix: --output
     valueFrom: $(inputs.sample_id)_salmon
-  - prefix: -1
-    valueFrom: |
+  - valueFrom: |
       ${
         if (inputs.mode == "mapping" && inputs.fastq_fwd) {
-          return inputs.fastq_fwd.path;
+          return ["-1", inputs.fastq_fwd.path];
         }
-        return null;
+        return [];
       }
-  - prefix: -2
-    valueFrom: |
+  - valueFrom: |
       ${
         if (inputs.mode == "mapping" && inputs.fastq_rev) {
-          return inputs.fastq_rev.path;
+          return ["-2", inputs.fastq_rev.path];
         }
-        return null;
+        return [];
       }
-  - prefix: -a
-    valueFrom: |
+  - valueFrom: |
       ${
         if (inputs.mode == "alignment" && inputs.aligned_bam) {
-          return inputs.aligned_bam.path;
+          return ["-a", inputs.aligned_bam.path];
         }
-        return null;
+        return [];
       }
   - "--validateMappings"
   - "--gcBias"

@@ -49,9 +49,8 @@ steps:
   download_sratools:
     run: steps/download-sratools.cwl
     when: $(inputs.download_method == "sratools")
-    scatter: accession
     in:
-      accession: accessions
+      accessions: accessions
       download_method: download_method
     out: [fastq_files]
     doc: "Download FASTQ files via fasterq-dump"
