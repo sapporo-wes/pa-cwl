@@ -327,6 +327,7 @@ steps:
           - quant_kallisto/abundance_tsv
         pickValue: all_non_null
         valueFrom: "${return self.length > 0 ? self[0] : null;}"
+      sample_ids: sample_ids
     out: [gene_counts, gene_tpm]
 
   # =====================

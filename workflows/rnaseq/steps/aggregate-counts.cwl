@@ -64,9 +64,19 @@ requirements:
               return genes
 
           def main():
-              quant_files = sys.argv[1:]
-              if not quant_files:
-                  print("No quantification files provided", file=sys.stderr)
+              import argparse
+              parser = argparse.ArgumentParser()
+              parser.add_argument("--samples", required=True,
+                                  help="Comma-separated sample IDs")
+              parser.add_argument("quant_files", nargs="+")
+              args = parser.parse_args()
+
+              sample_ids = args.samples.split(",")
+              quant_files = args.quant_files
+
+              if len(sample_ids) != len(quant_files):
+                  print(f"Mismatch: {len(sample_ids)} sample IDs vs "
+                        f"{len(quant_files)} quant files", file=sys.stderr)
                   sys.exit(1)
 
               # Detect format from first file
@@ -89,10 +99,7 @@ requirements:
               # Read all samples
               all_genes = set()
               samples = {}
-              for qf in quant_files:
-                  sample_name = os.path.basename(os.path.dirname(qf))
-                  if not sample_name or sample_name == ".":
-                      sample_name = os.path.splitext(os.path.basename(qf))[0]
+              for sample_name, qf in zip(sample_ids, quant_files):
                   data = reader_fn(qf)
                   samples[sample_name] = data
                   all_genes.update(data.keys())
@@ -131,6 +138,13 @@ inputs:
     inputBinding:
       position: 1
     doc: "Per-sample quantification files (quant.sf, .genes.results, or abundance.tsv)"
+
+  sample_ids:
+    type: string[]
+    inputBinding:
+      prefix: --samples
+      itemSeparator: ","
+    doc: "Sample identifiers (same order as quant_files)"
 
 outputs:
   gene_counts:
