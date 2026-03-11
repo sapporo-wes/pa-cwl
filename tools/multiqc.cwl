@@ -33,6 +33,8 @@ arguments:
   - "."
   - prefix: --outdir
     valueFrom: "."
+  - prefix: --filename
+    valueFrom: "multiqc_report"
   - "--force"
 
 outputs:
@@ -44,4 +46,4 @@ outputs:
   data_dir:
     type: Directory
     outputBinding:
-      glob: "multiqc_data"
+      glob: "multiqc_report_data"

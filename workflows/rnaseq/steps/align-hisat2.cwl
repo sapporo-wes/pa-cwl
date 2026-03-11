@@ -17,7 +17,7 @@ inputs:
   sample_id:
     type: string
   index_files:
-    type: File[]
+    type: File[]?
     doc: "Pre-built HISAT2 index files"
   index_basename:
     type: string?

@@ -17,7 +17,7 @@ requirements:
 
 hints:
   DockerRequirement:
-    dockerPull: "quay.io/biocontainers/star:2.7.11b--h43eeafb_0"
+    dockerPull: "quay.io/biocontainers/star:2.7.10b--h6b7c446_1"
 
 baseCommand: [STAR, --runMode, genomeGenerate]
 
@@ -40,6 +40,12 @@ inputs:
     inputBinding:
       prefix: --sjdbOverhang
     doc: "Read length - 1 for splice junction database"
+
+  genome_sa_index_nbases:
+    type: int?
+    inputBinding:
+      prefix: --genomeSAindexNbases
+    doc: "For small genomes, set to min(14, log2(GenomeLength)/2 - 1)"
 
 arguments:
   - prefix: --runThreadN

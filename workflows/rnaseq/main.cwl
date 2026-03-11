@@ -22,6 +22,7 @@ requirements:
   ScatterFeatureRequirement: {}
   InlineJavascriptRequirement: {}
   MultipleInputFeatureRequirement: {}
+  StepInputExpressionRequirement: {}
 
 inputs:
   # === Sample inputs ===
@@ -182,7 +183,8 @@ steps:
         source:
           - star_index
           - build_star_index/index_dir
-        pickValue: first_non_null
+        pickValue: all_non_null
+        valueFrom: "${return self.length > 0 ? self[0] : null;}"
       aligner: aligner
     out: [aligned_bam, transcriptome_bam, star_log, markdup_metrics]
 
@@ -202,7 +204,8 @@ steps:
         source:
           - hisat2_index_files
           - build_hisat2_index/index_files
-        pickValue: first_non_null
+        pickValue: all_non_null
+        valueFrom: "${return self.length > 0 ? self[0] : null;}"
       strandedness: strandedness
       aligner: aligner
     out: [aligned_bam, hisat2_log, markdup_metrics]
@@ -220,7 +223,9 @@ steps:
         source:
           - salmon_index
           - build_salmon_index/index_dir
-        pickValue: first_non_null
+        pickValue: all_non_null
+        valueFrom: "${return self.length > 0 ? self[0] : null;}"
+      transcriptome_fasta: transcriptome_fasta
       transcriptome_bam: align_star/transcriptome_bam
       sample_id: sample_ids
       mode:
@@ -242,7 +247,8 @@ steps:
         source:
           - salmon_index
           - build_salmon_index/index_dir
-        pickValue: first_non_null
+        pickValue: all_non_null
+        valueFrom: "${return self.length > 0 ? self[0] : null;}"
       fastq_fwd: qc_trim/trimmed_fwd
       fastq_rev: qc_trim/trimmed_rev
       sample_id: sample_ids
@@ -266,7 +272,8 @@ steps:
         source:
           - rsem_reference
           - build_rsem_reference/reference_dir
-        pickValue: first_non_null
+        pickValue: all_non_null
+        valueFrom: "${return self.length > 0 ? self[0] : null;}"
       sample_id: sample_ids
       quantifier: quantifier
     out: [genes_results, isoforms_results]
@@ -284,7 +291,8 @@ steps:
         source:
           - kallisto_index
           - build_kallisto_index/index_file
-        pickValue: first_non_null
+        pickValue: all_non_null
+        valueFrom: "${return self.length > 0 ? self[0] : null;}"
       fastq_fwd: qc_trim/trimmed_fwd
       fastq_rev: qc_trim/trimmed_rev
       sample_id: sample_ids
@@ -295,20 +303,15 @@ steps:
   # featureCounts (for HISAT2 path without Salmon)
   # =====================
   featurecounts:
-    run: ../../tools/featurecounts.cwl
+    run: steps/featurecounts.cwl
     when: $(inputs.aligner == "hisat2" && inputs.quantifier != "salmon")
-    scatter: [bam, sample_id]
-    scatterMethod: dotproduct
     in:
-      bam:
-        source:
-          - align_hisat2/aligned_bam
-        pickValue: first_non_null
+      bams: align_hisat2/aligned_bam
       gtf: gtf
-      sample_id: sample_ids
+      sample_ids: sample_ids
       aligner: aligner
       quantifier: quantifier
-    out: [counts, summary]
+    out: [counts, summaries]
 
   # =====================
   # Count matrix aggregation
@@ -322,7 +325,8 @@ steps:
           - quant_salmon_mapping/quant_sf
           - quant_rsem/genes_results
           - quant_kallisto/abundance_tsv
-        pickValue: first_non_null
+        pickValue: all_non_null
+        valueFrom: "${return self.length > 0 ? self[0] : null;}"
     out: [gene_counts, gene_tpm]
 
   # =====================
@@ -366,5 +370,6 @@ outputs:
     outputSource:
       - align_star/aligned_bam
       - align_hisat2/aligned_bam
-    pickValue: first_non_null
+    linkMerge: merge_flattened
+    pickValue: all_non_null
     doc: "Sorted, deduplicated BAM files per sample"

@@ -13,8 +13,11 @@ requirements:
 
 inputs:
   index_dir:
-    type: Directory
+    type: Directory?
     doc: "Salmon index directory"
+  transcriptome_fasta:
+    type: File?
+    doc: "Transcriptome FASTA (for alignment-based mode targets)"
   transcriptome_bam:
     type: File?
     doc: "Transcriptome-aligned BAM from STAR (alignment-based mode)"
@@ -37,6 +40,7 @@ steps:
     run: ../../../tools/salmon-quant.cwl
     in:
       index_dir: index_dir
+      transcriptome_fasta: transcriptome_fasta
       aligned_bam: transcriptome_bam
       fastq_fwd: fastq_fwd
       fastq_rev: fastq_rev

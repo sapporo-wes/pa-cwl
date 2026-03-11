@@ -9,6 +9,7 @@ requirements:
   ResourceRequirement:
     coresMin: 8
     ramMin: 8192
+  InlineJavascriptRequirement: {}
 
 hints:
   DockerRequirement:
@@ -18,10 +19,12 @@ baseCommand: [salmon, quant]
 
 inputs:
   index_dir:
-    type: Directory
-    inputBinding:
-      prefix: --index
-    doc: "Salmon index directory"
+    type: Directory?
+    doc: "Salmon index directory (required for mapping mode)"
+
+  transcriptome_fasta:
+    type: File?
+    doc: "Transcriptome FASTA (for alignment-based mode targets)"
 
   fastq_fwd:
     type: File?
@@ -60,6 +63,13 @@ arguments:
     valueFrom: $(inputs.sample_id)_salmon
   - valueFrom: |
       ${
+        if (inputs.mode == "mapping" && inputs.index_dir) {
+          return ["--index", inputs.index_dir.path];
+        }
+        return [];
+      }
+  - valueFrom: |
+      ${
         if (inputs.mode == "mapping" && inputs.fastq_fwd) {
           return ["-1", inputs.fastq_fwd.path];
         }
@@ -79,7 +89,13 @@ arguments:
         }
         return [];
       }
-  - "--validateMappings"
+  - valueFrom: |
+      ${
+        if (inputs.mode == "alignment" && inputs.transcriptome_fasta) {
+          return ["-t", inputs.transcriptome_fasta.path];
+        }
+        return [];
+      }
   - "--gcBias"
 
 outputs:

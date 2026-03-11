@@ -10,7 +10,7 @@ requirements:
 
 inputs:
   index_file:
-    type: File
+    type: File?
     doc: "kallisto index file"
   fastq_fwd:
     type: File

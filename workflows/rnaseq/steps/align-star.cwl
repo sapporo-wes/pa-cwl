@@ -18,7 +18,7 @@ inputs:
   sample_id:
     type: string
   index_dir:
-    type: Directory
+    type: Directory?
     doc: "Pre-built STAR index directory"
 
 steps:

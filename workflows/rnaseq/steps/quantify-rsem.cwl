@@ -10,10 +10,10 @@ requirements:
 
 inputs:
   transcriptome_bam:
-    type: File
+    type: File?
     doc: "Transcriptome-aligned BAM from STAR"
   reference_dir:
-    type: Directory
+    type: Directory?
     doc: "RSEM reference directory"
   sample_id:
     type: string
