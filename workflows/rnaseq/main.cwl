@@ -325,8 +325,8 @@ steps:
           - quant_salmon_mapping/quant_sf
           - quant_rsem/genes_results
           - quant_kallisto/abundance_tsv
+        linkMerge: merge_flattened
         pickValue: all_non_null
-        valueFrom: "${return self.length > 0 ? self[0] : null;}"
       sample_ids: sample_ids
     out: [gene_counts, gene_tpm]
 

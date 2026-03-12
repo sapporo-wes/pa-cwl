@@ -47,6 +47,7 @@ inputs:
     default: "A"
     inputBinding:
       prefix: --libType
+      position: -1
     doc: "Library type (A for automatic detection)"
 
   mode:

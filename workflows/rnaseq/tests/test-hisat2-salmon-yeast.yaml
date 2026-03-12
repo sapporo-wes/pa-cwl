@@ -1,0 +1,22 @@
+# Test input: HISAT2 + Salmon with simulated yeast RNA-seq reads
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R1.fastq.gz
+fastq_rev:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R2.fastq.gz
+sample_ids:
+  - yeast_sim
+genome_fasta:
+  class: File
+  path: ../../../test-data/yeast/genome.fa
+gtf:
+  class: File
+  path: ../../../test-data/yeast/genes.gtf
+transcriptome_fasta:
+  class: File
+  path: ../../../test-data/yeast/transcriptome.fa
+aligner: hisat2
+quantifier: salmon
+trimmer: fastp
+strandedness: unstranded

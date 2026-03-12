@@ -10,6 +10,9 @@ requirements:
     coresMin: 8
     ramMin: 8192
   ShellCommandRequirement: {}
+  InlineJavascriptRequirement: {}
+  InitialWorkDirRequirement:
+    listing: $(inputs.index_files)
 
 hints:
   DockerRequirement:
@@ -51,26 +54,27 @@ arguments:
     valueFrom: $(runtime.cores)
   - prefix: -x
     valueFrom: $(inputs.index_basename)
-  - prefix: "-1"
-    valueFrom: $(inputs.fastq_fwd.path)
-  - prefix: "-2"
-    valueFrom: |
+  - valueFrom: |
       ${
         if (inputs.fastq_rev) {
-          return inputs.fastq_rev.path;
+          return ["-1", inputs.fastq_fwd.path, "-2", inputs.fastq_rev.path];
         }
-        return null;
+        return ["-U", inputs.fastq_fwd.path];
       }
-  - prefix: --rna-strandness
-    valueFrom: |
+  - valueFrom: |
       ${
-        var map = {"forward": "FR", "reverse": "RF", "unstranded": ""};
-        return map[inputs.strandedness] || "";
+        if (inputs.strandedness == "forward") return "--rna-strandness FR";
+        if (inputs.strandedness == "reverse") return "--rna-strandness RF";
+        return "";
       }
-  - prefix: --new-summary
-    valueFrom: ""
+    shellQuote: false
+  - --new-summary
   - prefix: --summary-file
     valueFrom: $(inputs.sample_id).hisat2.summary.log
+  - prefix: --rg-id
+    valueFrom: $(inputs.sample_id)
+  - prefix: --rg
+    valueFrom: $("SM:" + inputs.sample_id)
   - valueFrom: "|"
     shellQuote: false
   - "samtools"

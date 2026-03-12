@@ -59,17 +59,17 @@ inputs:
   - id: strandedness
     type: enum
     description: "Library strandedness"
-    options: [unstranded, forward, reverse, auto]
-    default: auto
+    options: [unstranded, forward, reverse]
+    default: unstranded
 
 outputs:
   - id: gene_counts
     type: File
     description: "Gene-level count matrix (TSV)"
 
-  - id: transcript_counts
+  - id: gene_tpm
     type: File
-    description: "Transcript-level count matrix (TSV)"
+    description: "Gene-level TPM matrix (TSV)"
 
   - id: multiqc_report
     type: File
