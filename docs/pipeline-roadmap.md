@@ -6,7 +6,7 @@ Production-ready CWL v1.2 conversions of popular nf-core pipelines.
 
 ### rnaseq — RNA-seq Analysis
 
-**Status: Alpha — STAR+Salmon pathway tested, others untested**
+**Status: Beta — STAR+Salmon, HISAT2+Salmon, Kallisto pathways tested**
 
 Core analysis steps are implemented. QC-only tools (RSeQC, Qualimap, etc.) are not yet included.
 
@@ -15,10 +15,10 @@ Core analysis steps are implemented. QC-only tools (RSeQC, Qualimap, etc.) are n
 | FastQC | Done | |
 | Trimming (fastp / Trim Galore) | Done | Switchable via input parameter |
 | STAR alignment + index | Done | Tested with yeast simulated data (local + Docker) |
-| HISAT2 alignment + index | Done | Tool exists, pathway untested |
-| Salmon quant + index | Done | Alignment-based and mapping-based modes |
+| HISAT2 alignment + index | Done | Tested with yeast simulated data |
+| Salmon quant + index | Done | Alignment-based (STAR) and mapping-based (HISAT2) modes tested |
 | RSEM quant + index | Done | Tool exists, pathway untested |
-| Kallisto quant + index | Done | Tool exists, pathway untested |
+| Kallisto quant + index | Done | Tested with yeast simulated data |
 | samtools sort/index | Done | |
 | Picard MarkDuplicates | Done | |
 | featureCounts | Done | |
@@ -32,12 +32,11 @@ Core analysis steps are implemented. QC-only tools (RSeQC, Qualimap, etc.) are n
 | Preseq | Missing | Library complexity estimation |
 | DESeq2 QC | Missing | PCA, sample distance heatmaps |
 
-**Remaining work to reach beta:**
-1. Test HISAT2+Salmon and HISAT2+featureCounts pathways
-2. Test Kallisto-only pathway
-3. Add RSeQC (at minimum: infer_experiment, bam_stat, read_distribution)
-4. Fix agent.yaml inconsistencies (transcript_counts output declared but not produced, strandedness "auto" not in CWL)
-5. Multi-sample test (current test uses 1 sample)
+**Remaining work to reach 1.0:**
+1. Add RSeQC (at minimum: infer_experiment, bam_stat, read_distribution)
+2. Multi-sample test (current tests use 1 sample)
+3. Test RSEM and HISAT2+featureCounts pathways
+4. Docker container tests for HISAT2 and Kallisto pathways
 
 ---
 
