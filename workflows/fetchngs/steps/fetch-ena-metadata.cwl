@@ -85,7 +85,7 @@ requirements:
           if __name__ == "__main__":
               main()
       - entryname: accessions.txt
-        entry: $(inputs.accessions.join("\n"))
+        entry: $(inputs.accessions.join("\n") + "\n")
 
 hints:
   DockerRequirement:

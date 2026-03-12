@@ -1,0 +1,7 @@
+# Test: FTP download with two tiny paired-end accessions
+# SRR24680847: plant metagenome, ~5MB per file, 144K reads
+# SRR29253357: Homo sapiens, ~4+6MB, 40K reads
+accessions:
+  - SRR24680847
+  - SRR29253357
+download_method: ftp

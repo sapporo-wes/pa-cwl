@@ -1,5 +1,5 @@
 # Example: Fetch FASTQ files for SRA accessions via FTP
-# These are small RNA-seq samples from E. coli for quick testing
+# Himes et al. 2014 — human airway smooth muscle RNA-seq (paired-end)
 accessions:
   - SRR1039508
   - SRR1039509

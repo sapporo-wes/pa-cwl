@@ -1,0 +1,5 @@
+# Test: SRA-tools download with one tiny paired-end accession
+# SRR29253357: Homo sapiens, ~4+6MB, 40K reads
+accessions:
+  - SRR29253357
+download_method: sratools

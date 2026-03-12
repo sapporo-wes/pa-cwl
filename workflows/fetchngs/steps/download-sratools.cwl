@@ -22,13 +22,13 @@ requirements:
             [ -z "$acc" ] && continue
             echo "Downloading: $acc"
             fasterq-dump --threads "$1" --split-files --skip-technical "$acc"
-            for f in ${acc}*.fastq; do
+            for f in \${acc}*.fastq; do
               gzip "$f"
             done
             echo "Done: $acc"
           done < "$2"
       - entryname: accessions.txt
-        entry: $(inputs.accessions.join("\n"))
+        entry: $(inputs.accessions.join("\n") + "\n")
 
 hints:
   DockerRequirement:
