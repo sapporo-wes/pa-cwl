@@ -43,7 +43,7 @@ Core analysis steps are implemented. QC-only tools (RSeQC, Qualimap, etc.) are n
 
 ### fetchngs — Public Data Retrieval
 
-**Status: Alpha — FTP download works, limited accession type support**
+**Status: Beta — FTP and sratools paths tested (local + Docker)**
 
 Downloads FASTQ from ENA/SRA and generates samplesheets for downstream workflows.
 
@@ -59,14 +59,13 @@ Downloads FASTQ from ENA/SRA and generates samplesheets for downstream workflows
 | Aspera download | Missing | |
 | S3/GCP mirror fallback | Missing | |
 | Input validation | Missing | No accession format checking |
-| Tests | Missing | tests/ directory is empty |
+| Tests | Done | FTP + sratools tests with small public accessions |
 
-**Remaining work to reach beta:**
+**Remaining work to reach 1.0:**
 1. Add project-level ID resolution (SRP/PRJNA/PRJEB → individual SRR/ERR runs)
 2. Add accession format validation
 3. Fix agent.yaml/main.cwl parameter mismatches (download_method naming, output_format)
-4. Write tests with small public dataset
-5. Add MD5 validation to sratools path
+4. Add MD5 validation to sratools path
 
 ---
 

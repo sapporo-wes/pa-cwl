@@ -13,23 +13,27 @@ use_cases:
 inputs:
   - id: accessions
     type: "string[]"
-    description: "List of SRA/ENA/DDBJ accession numbers (e.g., SRR12345678, ERR1234567, DRR012345)"
+    description: |
+      List of accession numbers. Supports:
+      - Run: SRR/ERR/DRR (e.g., SRR12345678)
+      - Experiment: SRX/ERX/DRX
+      - Sample: SRS/ERS/DRS
+      - Study: SRP/ERP/DRP (resolves to all runs in the study)
+      - BioProject: PRJNA/PRJEB/PRJDB (resolves to all runs)
+      - BioSample: SAMN/SAME/SAMD
+      - GEO: GSE/GSM (resolved via NCBI eutils to SRA runs)
     required: true
     resolve_from:
       - sra_accession
       - dra_accession
-
-  - id: output_format
-    type: enum
-    description: "Output format for downloaded reads"
-    options: [fastq, bam]
-    default: fastq
+      - geo_accession
+      - bioproject_accession
 
   - id: download_method
     type: enum
-    description: "Tool to use for downloading"
-    options: [fasterq-dump, wget, aspera]
-    default: fasterq-dump
+    description: "Download method"
+    options: [ftp, sratools]
+    default: ftp
 
 outputs:
   - id: fastq_files
@@ -50,17 +54,16 @@ execution_plan:
 
     - id: validate_accessions
       action: resolve_input
-      description: "Validate accession format and check availability via NCBI/ENA API"
+      description: "Validate accession format. Supported: SRR/ERR/DRR, SRX/ERX/DRX, SRS/ERS/DRS, SRP/ERP/DRP, PRJNA/PRJEB/PRJDB, SAMN/SAME/SAMD, GSE, GSM"
       parameters:
         input_id: accessions
-        validation: "regex:^[SED]RR\\d+$"
 
     - id: select_method
       action: select_option
-      description: "Select download method based on user preference or network conditions"
+      description: "Select download method: ftp (ENA FTP with MD5) or sratools (fasterq-dump)"
       parameters:
         input_id: download_method
-        default: fasterq-dump
+        default: ftp
 
     - id: generate_inputs
       action: generate_input_object
@@ -85,10 +88,10 @@ execution_plan:
       description: "Report downloaded files, sizes, and metadata summary to user"
 
 hints: |
-  - If the user provides a BioProject accession (PRJNA/PRJEB/PRJDB), first query
-    NCBI/ENA to resolve it to individual run accessions before proceeding.
+  - Project-level (SRP/PRJNA) and GEO (GSE/GSM) accessions are automatically resolved
+    to individual run accessions. No manual resolution needed.
   - For large numbers of accessions (>50), suggest batching to avoid timeout.
-  - aspera is faster but requires Aspera CLI; fasterq-dump is more universally available.
+  - FTP downloads include MD5 verification; sratools downloads include gzip integrity checks.
   - Check available disk space before downloading — estimate ~3-5 GB per WGS run.
   - If downloads fail, suggest retrying with a different download_method.
 

@@ -25,6 +25,14 @@ requirements:
             for f in \${acc}*.fastq; do
               gzip "$f"
             done
+            # Verify gzip integrity
+            for f in \${acc}*.fastq.gz; do
+              if ! gzip -t "$f" 2>/dev/null; then
+                echo "ERROR: Gzip integrity check failed for $f" >&2
+                exit 1
+              fi
+              echo "  Verified: $f (\$(du -h "$f" | cut -f1))"
+            done
             echo "Done: $acc"
           done < "$2"
       - entryname: accessions.txt

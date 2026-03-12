@@ -18,7 +18,7 @@ requirements:
 inputs:
   accessions:
     type: string[]
-    doc: "SRA/ENA/DDBJ run accession numbers"
+    doc: "Accession numbers: run (SRR/ERR/DRR), experiment (SRX/ERX/DRX), sample (SRS/ERS/DRS), study (SRP/ERP/DRP), BioProject (PRJNA/PRJEB/PRJDB), BioSample (SAMN/SAME/SAMD), or GEO (GSE/GSM)"
 
   download_method:
     type:
