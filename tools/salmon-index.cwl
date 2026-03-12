@@ -36,7 +36,7 @@ requirements:
 
 hints:
   DockerRequirement:
-    dockerPull: "quay.io/biocontainers/salmon:1.10.3--h6dccd9a_1"
+    dockerPull: "quay.io/biocontainers/salmon:1.10.3--h45fbf2d_5"
 
 baseCommand: [bash, build_index.sh]
 

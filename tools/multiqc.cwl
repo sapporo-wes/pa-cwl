@@ -9,14 +9,14 @@ requirements:
   ResourceRequirement:
     coresMin: 1
     ramMin: 2048
-  InitialWorkDirRequirement:
-    listing: $(inputs.report_files)
+  InlineJavascriptRequirement: {}
+  ShellCommandRequirement: {}
 
 hints:
   DockerRequirement:
     dockerPull: "quay.io/biocontainers/multiqc:1.21--pyhdfd78af_0"
 
-baseCommand: [multiqc]
+baseCommand: []
 
 inputs:
   report_files:
@@ -25,17 +25,25 @@ inputs:
 
   title:
     type: string?
-    inputBinding:
-      prefix: --title
     doc: "Report title"
 
 arguments:
-  - "."
-  - prefix: --outdir
-    valueFrom: "."
-  - prefix: --filename
-    valueFrom: "multiqc_report"
-  - "--force"
+  - shellQuote: false
+    valueFrom: |
+      ${
+        var cmd = "";
+        for (var i = 0; i < inputs.report_files.length; i++) {
+          cmd += "cp " + inputs.report_files[i].path + " . && ";
+        }
+        cmd += "multiqc .";
+        cmd += " --outdir .";
+        cmd += " --filename multiqc_report";
+        if (inputs.title) {
+          cmd += " --title '" + inputs.title + "'";
+        }
+        cmd += " --force";
+        return cmd;
+      }
 
 outputs:
   html_report:

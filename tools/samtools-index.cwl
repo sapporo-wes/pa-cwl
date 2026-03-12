@@ -9,27 +9,25 @@ requirements:
   ResourceRequirement:
     coresMin: 2
     ramMin: 1024
-  InitialWorkDirRequirement:
-    listing:
-      - $(inputs.sorted_bam)
+  InlineJavascriptRequirement: {}
+  ShellCommandRequirement: {}
 
 hints:
   DockerRequirement:
     dockerPull: "quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
 
-baseCommand: [samtools, index]
+baseCommand: []
 
 inputs:
   sorted_bam:
     type: File
-    inputBinding:
-      position: 1
-      valueFrom: $(self.basename)
     doc: "Coordinate-sorted BAM file"
 
 arguments:
-  - prefix: -@
-    valueFrom: $(runtime.cores)
+  - shellQuote: false
+    valueFrom: |
+      cp $(inputs.sorted_bam.path) $(inputs.sorted_bam.basename) &&
+      samtools index -@ $(runtime.cores) $(inputs.sorted_bam.basename)
 
 outputs:
   indexed_bam:

@@ -12,7 +12,7 @@ requirements:
 
 hints:
   DockerRequirement:
-    dockerPull: "quay.io/biocontainers/fastp:0.23.4--hadf994f_0"
+    dockerPull: "quay.io/biocontainers/fastp:0.23.4--h5f740d0_0"
 
 baseCommand: [fastp]
 

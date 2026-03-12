@@ -9,27 +9,25 @@ requirements:
   ResourceRequirement:
     coresMin: 4
     ramMin: 1024
-  InitialWorkDirRequirement:
-    listing:
-      - $(inputs.input_file)
+  InlineJavascriptRequirement: {}
+  ShellCommandRequirement: {}
 
 hints:
   DockerRequirement:
     dockerPull: "quay.io/biocontainers/pigz:2.8--h2797004_0"
 
-baseCommand: [pigz]
+baseCommand: []
 
 inputs:
   input_file:
     type: File
-    inputBinding:
-      position: 1
-      valueFrom: $(self.basename)
     doc: "File to compress"
 
 arguments:
-  - prefix: -p
-    valueFrom: $(runtime.cores)
+  - shellQuote: false
+    valueFrom: |
+      cp $(inputs.input_file.path) $(inputs.input_file.basename) &&
+      pigz -p $(runtime.cores) $(inputs.input_file.basename)
 
 outputs:
   compressed_file:
