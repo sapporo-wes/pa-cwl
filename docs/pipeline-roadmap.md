@@ -52,7 +52,7 @@ Kallisto Docker failure is ARM Mac-specific (BioContainers are x86-only, Rosetta
 
 ### fetchngs — Public Data Retrieval
 
-**Status: Beta — FTP and sratools paths tested (local + Docker)**
+**Status: 1.0 — FTP and sratools paths tested, accession validation + project/GEO resolution**
 
 Downloads FASTQ from ENA/SRA and generates samplesheets for downstream workflows.
 
@@ -60,21 +60,18 @@ Downloads FASTQ from ENA/SRA and generates samplesheets for downstream workflows
 |---------|--------|-------|
 | ENA metadata API | Done | 19 metadata fields |
 | FTP download + MD5 check | Done | |
-| sratools (fasterq-dump) | Done | No MD5 validation on this path |
+| sratools (fasterq-dump) | Done | With gzip integrity check |
 | Samplesheet generation | Done | CSV with sample, fastq_1, fastq_2, strandedness |
 | Run-level IDs (SRR/ERR/DRR) | Done | |
-| Project-level IDs (SRP/PRJNA) | Missing | Needs ID-to-run resolution |
-| GEO IDs (GSE/GSM) | Missing | Needs GEO API |
-| Aspera download | Missing | |
-| S3/GCP mirror fallback | Missing | |
-| Input validation | Missing | No accession format checking |
+| Experiment/Sample IDs (SRX/SRS/ERX/ERS) | Done | Resolved via ENA API |
+| Project-level IDs (SRP/PRJNA/PRJEB) | Done | Resolved via ENA API |
+| GEO IDs (GSE/GSM) | Done | Resolved via NCBI eutils chain |
+| BioSample/BioProject IDs (SAMN/PRJNA) | Done | Resolved via ENA API |
+| Accession format validation | Done | Regex validation with helpful error messages |
+| Deduplication | Done | Across multiple accessions |
+| Aspera download | Not planned | FTP + sratools cover most use cases |
+| S3/GCP mirror fallback | Not planned | |
 | Tests | Done | FTP + sratools tests with small public accessions |
-
-**Remaining work to reach 1.0:**
-1. Add project-level ID resolution (SRP/PRJNA/PRJEB → individual SRR/ERR runs)
-2. Add accession format validation
-3. Fix agent.yaml/main.cwl parameter mismatches (download_method naming, output_format)
-4. Add MD5 validation to sratools path
 
 ---
 
@@ -133,11 +130,11 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 Prioritized by impact, tool reuse, and incremental complexity:
 
 ```
-Already done          Shared tooling builds on previous
-    │                         │
-    ▼                         ▼
-1. rnaseq (finish)     fastp, samtools, picard, MultiQC
-2. fetchngs (finish)   utility — feeds all pipelines
+Done                  Next up — shared tooling builds on previous
+  │                         │
+  ▼                         ▼
+✓ rnaseq (1.0)        fastp, samtools, picard, MultiQC, STAR, featureCounts, RSeQC
+✓ fetchngs (1.0)      utility — feeds all pipelines
 3. chipseq             + BWA-MEM, MACS2, deepTools
 4. atacseq             ~90% shared with chipseq
 5. sarek               + GATK, Mutect2, Strelka2, DeepVariant, BWA-MEM2, VEP
