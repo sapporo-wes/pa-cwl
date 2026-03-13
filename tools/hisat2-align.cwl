@@ -9,16 +9,22 @@ requirements:
   ResourceRequirement:
     coresMin: 8
     ramMin: 8192
-  ShellCommandRequirement: {}
   InlineJavascriptRequirement: {}
   InitialWorkDirRequirement:
-    listing: $(inputs.index_files)
+    listing: |
+      ${
+        return inputs.index_files.map(function(f) {
+          return {"entry": f, "entryname": f.basename, "writable": true};
+        });
+      }
 
 hints:
   DockerRequirement:
     dockerPull: "quay.io/biocontainers/hisat2:2.2.1--h87f3376_4"
 
 baseCommand: [hisat2]
+
+stdout: $(inputs.sample_id).sam
 
 inputs:
   index_files:
@@ -75,20 +81,12 @@ arguments:
     valueFrom: $(inputs.sample_id)
   - prefix: --rg
     valueFrom: $("SM:" + inputs.sample_id)
-  - valueFrom: "|"
-    shellQuote: false
-  - "samtools"
-  - "view"
-  - "-bS"
-  - "-"
-  - prefix: "-o"
-    valueFrom: $(inputs.sample_id).bam
 
 outputs:
-  aligned_bam:
+  aligned_sam:
     type: File
     outputBinding:
-      glob: "$(inputs.sample_id).bam"
+      glob: "$(inputs.sample_id).sam"
 
   summary_log:
     type: File

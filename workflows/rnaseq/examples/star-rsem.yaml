@@ -1,5 +1,5 @@
-# Example: HISAT2 + featureCounts pipeline
-# Lower memory alternative for alignment-based counting
+# Example: STAR + RSEM pipeline
+# Isoform-level quantification using RSEM from STAR transcriptome BAM
 
 fastq_fwd:
   - class: File
@@ -25,7 +25,7 @@ gtf:
   class: File
   path: /path/to/gencode.v44.primary_assembly.annotation.gtf
 
-aligner: hisat2
-quantifier: salmon
-trimmer: trim_galore
+aligner: star
+quantifier: rsem
+trimmer: fastp
 strandedness: reverse

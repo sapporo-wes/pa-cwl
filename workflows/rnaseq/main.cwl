@@ -300,16 +300,88 @@ steps:
     out: [quant_dir, abundance_tsv]
 
   # =====================
-  # featureCounts (for HISAT2 path without Salmon)
+  # GTF to BED12 conversion (for RSeQC)
+  # =====================
+  gtf_to_bed:
+    run: ../../tools/gtf-to-bed.cwl
+    in:
+      gtf: gtf
+    out: [bed]
+
+  # =====================
+  # RSeQC: bam_stat (per sample, skip for kallisto)
+  # =====================
+  rseqc_bam_stat:
+    run: ../../tools/rseqc-bam-stat.cwl
+    when: $(inputs.quantifier != "kallisto")
+    scatter: [bam, sample_id]
+    scatterMethod: dotproduct
+    in:
+      bam:
+        source:
+          - align_star/aligned_bam
+          - align_hisat2/aligned_bam
+        linkMerge: merge_flattened
+        pickValue: all_non_null
+      sample_id: sample_ids
+      quantifier: quantifier
+    out: [report]
+
+  # =====================
+  # RSeQC: infer_experiment (per sample, skip for kallisto)
+  # =====================
+  rseqc_infer_experiment:
+    run: ../../tools/rseqc-infer-experiment.cwl
+    when: $(inputs.quantifier != "kallisto")
+    scatter: [bam, sample_id]
+    scatterMethod: dotproduct
+    in:
+      bam:
+        source:
+          - align_star/aligned_bam
+          - align_hisat2/aligned_bam
+        linkMerge: merge_flattened
+        pickValue: all_non_null
+      bed: gtf_to_bed/bed
+      sample_id: sample_ids
+      quantifier: quantifier
+    out: [report]
+
+  # =====================
+  # RSeQC: read_distribution (per sample, skip for kallisto)
+  # =====================
+  rseqc_read_distribution:
+    run: ../../tools/rseqc-read-distribution.cwl
+    when: $(inputs.quantifier != "kallisto")
+    scatter: [bam, sample_id]
+    scatterMethod: dotproduct
+    in:
+      bam:
+        source:
+          - align_star/aligned_bam
+          - align_hisat2/aligned_bam
+        linkMerge: merge_flattened
+        pickValue: all_non_null
+      bed: gtf_to_bed/bed
+      sample_id: sample_ids
+      quantifier: quantifier
+    out: [report]
+
+  # =====================
+  # featureCounts (supplementary QC for any genome-aligned path)
   # =====================
   featurecounts:
     run: steps/featurecounts.cwl
-    when: $(inputs.aligner == "hisat2" && inputs.quantifier != "salmon")
+    when: $(inputs.quantifier != "kallisto")
     in:
-      bams: align_hisat2/aligned_bam
+      bams:
+        source:
+          - align_star/aligned_bam
+          - align_hisat2/aligned_bam
+        linkMerge: merge_flattened
+        pickValue: all_non_null
       gtf: gtf
       sample_ids: sample_ids
-      aligner: aligner
       quantifier: quantifier
     out: [counts, summaries]
 
@@ -344,6 +416,10 @@ steps:
           - align_star/markdup_metrics
           - align_hisat2/hisat2_log
           - align_hisat2/markdup_metrics
+          - rseqc_bam_stat/report
+          - rseqc_infer_experiment/report
+          - rseqc_read_distribution/report
+          - featurecounts/summaries
         linkMerge: merge_flattened
         pickValue: all_non_null
       title:
@@ -374,3 +450,21 @@ outputs:
     linkMerge: merge_flattened
     pickValue: all_non_null
     doc: "Sorted, deduplicated BAM files per sample"
+
+  rseqc_bam_stat_reports:
+    type: File[]?
+    outputSource: rseqc_bam_stat/report
+    pickValue: all_non_null
+    doc: "RSeQC bam_stat reports per sample"
+
+  rseqc_infer_experiment_reports:
+    type: File[]?
+    outputSource: rseqc_infer_experiment/report
+    pickValue: all_non_null
+    doc: "RSeQC infer_experiment reports per sample"
+
+  rseqc_read_distribution_reports:
+    type: File[]?
+    outputSource: rseqc_read_distribution/report
+    pickValue: all_non_null
+    doc: "RSeQC read_distribution reports per sample"

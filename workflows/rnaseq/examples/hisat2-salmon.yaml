@@ -1,0 +1,36 @@
+# Example: HISAT2 + Salmon pipeline
+# Lower memory alternative — HISAT2 alignment + Salmon mapping-based quantification
+# featureCounts runs automatically as supplementary QC
+
+fastq_fwd:
+  - class: File
+    path: /path/to/sample1_R1.fastq.gz
+  - class: File
+    path: /path/to/sample2_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: /path/to/sample1_R2.fastq.gz
+  - class: File
+    path: /path/to/sample2_R2.fastq.gz
+
+sample_ids:
+  - sample1
+  - sample2
+
+genome_fasta:
+  class: File
+  path: /path/to/GRCh38.primary_assembly.genome.fa
+
+gtf:
+  class: File
+  path: /path/to/gencode.v44.primary_assembly.annotation.gtf
+
+transcriptome_fasta:
+  class: File
+  path: /path/to/gencode.v44.transcripts.fa
+
+aligner: hisat2
+quantifier: salmon
+trimmer: trim_galore
+strandedness: reverse

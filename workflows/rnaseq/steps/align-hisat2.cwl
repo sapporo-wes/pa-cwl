@@ -38,12 +38,12 @@ steps:
       fastq_rev: fastq_rev
       sample_id: sample_id
       strandedness: strandedness
-    out: [aligned_bam, summary_log]
+    out: [aligned_sam, summary_log]
 
   samtools_sort:
     run: ../../../tools/samtools-sort.cwl
     in:
-      bam: hisat2_align/aligned_bam
+      bam: hisat2_align/aligned_sam
       sample_id: sample_id
     out: [sorted_bam]
 

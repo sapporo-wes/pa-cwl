@@ -77,7 +77,11 @@ outputs:
 
   - id: aligned_bams
     type: "File[]"
-    description: "Sorted, indexed BAM files per sample"
+    description: "Sorted, indexed BAM files per sample (not produced for kallisto)"
+
+  - id: rseqc_reports
+    type: "File[]"
+    description: "RSeQC QC reports (bam_stat, infer_experiment, read_distribution) per sample"
 
 execution_plan:
   steps:
@@ -110,11 +114,6 @@ execution_plan:
         prompt: "Which aligner and quantifier would you like? Defaults: STAR + Salmon. Options: STAR/HISAT2 for alignment, Salmon/RSEM/kallisto for quantification."
         skip_if: "user has not expressed preference"
 
-    - id: detect_strandedness
-      action: resolve_input
-      description: "If strandedness is 'auto', infer from a subsample of reads"
-      condition: "strandedness == auto"
-
     - id: generate_inputs
       action: generate_input_object
       description: "Generate CWL input YAML with all resolved parameters"
@@ -144,15 +143,18 @@ execution_plan:
       description: "Report completion with links to count matrices and MultiQC report. Suggest next steps (e.g., differential expression with differentialabundance workflow)."
 
 hints: |
+  - Valid pathway combinations: STAR+Salmon (default), STAR+RSEM, HISAT2+Salmon,
+    kallisto (standalone). RSEM requires STAR; HISAT2+RSEM is not supported.
   - If the user provides SRA accessions instead of FASTQ files, run the fetchngs
     workflow first to download the data, then feed the outputs into this workflow.
   - For organisms other than human/mouse, the user must provide custom genome FASTA
     and GTF files. Prompt them for these if genome_reference is set to 'custom'.
   - STAR requires ~32 GB RAM for human genome indexing. Ensure the WES endpoint
     has sufficient resources. HISAT2 is lighter (~8 GB).
-  - kallisto does pseudo-alignment (no BAM output). Warn the user if they need BAMs.
-  - If strandedness is unknown, the pipeline can auto-detect using a subsample. This
-    adds ~10 minutes but avoids incorrect quantification.
+  - kallisto does pseudo-alignment (no BAM output, no RSeQC QC). Warn the user if
+    they need BAMs or alignment-level QC.
+  - If strandedness is unknown, suggest 'unstranded' as the safe default. The
+    RSeQC infer_experiment report in the output can confirm the correct setting.
   - For large experiments (>20 samples), suggest the user checks disk space and
     consider whether they need BAM files (can skip to save space).
 

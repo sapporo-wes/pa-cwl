@@ -12,7 +12,7 @@ requirements:
 
 hints:
   DockerRequirement:
-    dockerPull: "quay.io/biocontainers/rsem:1.3.3--h93d5f22_6"
+    dockerPull: "quay.io/biocontainers/rsem:1.3.3--pl5321h077b44d_12"
 
 baseCommand: [rsem-calculate-expression]
 
