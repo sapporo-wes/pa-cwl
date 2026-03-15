@@ -79,6 +79,32 @@ ChIP-seq analysis with QC, alignment, filtering, peak calling, and coverage trac
 
 ---
 
+### atacseq — ATAC-seq Chromatin Accessibility
+
+**Status: 1.0 — Narrow peak mode tested**
+
+ATAC-seq analysis with QC, alignment, filtering, peak calling (--nomodel), and coverage tracks.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FastQC | Done | |
+| Trimming (fastp / Trim Galore) | Done | Switchable via input parameter |
+| BWA-MEM2 alignment + index | Done | Shared with chipseq |
+| samtools sort/index | Done | |
+| Picard MarkDuplicates | Done | |
+| samtools filter | Done | -F 1804 -f 2 -q 1 |
+| MACS2 --nomodel peak calling | Done | ATAC-seq mode: --nomodel --keep-dup all |
+| deepTools bamCoverage | Done | Normalized bigWig generation |
+| MultiQC | Done | Integrates FastQC, fastp, Picard |
+
+**Tested pathway matrix:**
+
+| Mode | Local |
+|------|-------|
+| Narrow peaks | Pass |
+
+---
+
 ### fetchngs — Public Data Retrieval
 
 **Status: 1.0 — FTP and sratools paths tested, accession validation + project/GEO resolution**
@@ -114,7 +140,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 |----------|-------|--------|-------------|--------------|
 | **sarek** | 554 | Variant Calling | Germline + somatic variant calling from WGS/WES/targeted. GATK HaplotypeCaller, Mutect2, Strelka2, DeepVariant, Manta, TIDDIT. | fastp, STAR (for RNA), BWA-MEM2, samtools, picard, MultiQC |
 | ~~**chipseq**~~ | 233 | Epigenomics | **Done (1.0)** — see chipseq section above |  |
-| **atacseq** | 220 | Epigenomics | ATAC-seq chromatin accessibility. BWA, MACS2, genrich, deepTools. | fastp, samtools, picard, MultiQC (nearly identical to chipseq) |
+| ~~**atacseq**~~ | 220 | Epigenomics | **Done (1.0)** — see atacseq section above |  |
 
 ### Tier 2 — High impact, some new tool domains
 
@@ -165,7 +191,7 @@ Done                  Next up — shared tooling builds on previous
 ✓ rnaseq (1.0)        fastp, samtools, picard, MultiQC, STAR, featureCounts, RSeQC
 ✓ fetchngs (1.0)      utility — feeds all pipelines
 ✓ chipseq (1.0)       + BWA-MEM2, MACS2, deepTools, samtools-filter
-4. atacseq             ~90% shared with chipseq
+✓ atacseq (1.0)       ~90% shared with chipseq + --nomodel
 5. sarek               + GATK, Mutect2, Strelka2, DeepVariant, BWA-MEM2, VEP
 6. methylseq           + Bismark, bwa-meth, MethylDackel
 7. scrnaseq            + STARsolo, alevin-fry, bustools

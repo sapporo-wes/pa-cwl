@@ -3,7 +3,7 @@ cwlVersion: v1.2
 class: CommandLineTool
 
 label: "MACS2 callpeak - Peak calling"
-doc: "Call peaks from ChIP-seq data using MACS2"
+doc: "Call peaks from ChIP-seq or ATAC-seq data using MACS2"
 
 requirements:
   ResourceRequirement:
@@ -69,6 +69,13 @@ inputs:
     inputBinding:
       prefix: --keep-dup
     doc: "How to handle duplicates (1=keep 1, all=keep all, auto)"
+
+  nomodel:
+    type: boolean?
+    default: false
+    inputBinding:
+      prefix: --nomodel
+    doc: "Skip MACS2 fragment size model (required for ATAC-seq)"
 
   outdir:
     type: string?

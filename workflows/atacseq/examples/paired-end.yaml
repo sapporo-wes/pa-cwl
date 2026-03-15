@@ -1,0 +1,26 @@
+# Example: Paired-end ATAC-seq
+# Human ATAC-seq with two biological replicates
+
+fastq_fwd:
+  - class: File
+    path: /path/to/sample1_R1.fastq.gz
+  - class: File
+    path: /path/to/sample2_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: /path/to/sample1_R2.fastq.gz
+  - class: File
+    path: /path/to/sample2_R2.fastq.gz
+
+sample_ids:
+  - sample1_ATAC
+  - sample2_ATAC
+
+genome_fasta:
+  class: File
+  path: /path/to/GRCh38.primary_assembly.genome.fa
+
+peak_type: narrow
+genome_size: "hs"
+trimmer: fastp

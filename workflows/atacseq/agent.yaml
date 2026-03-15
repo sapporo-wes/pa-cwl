@@ -1,0 +1,125 @@
+workflow: atacseq
+description: |
+  ATAC-seq chromatin accessibility pipeline. Performs QC, trimming, BWA-MEM2
+  alignment, duplicate marking, BAM filtering, MACS2 peak calling (with
+  --nomodel for ATAC-seq), and bigWig coverage track generation.
+
+use_cases:
+  - "Identify open chromatin regions from ATAC-seq FASTQ files"
+  - "Generate normalized bigWig tracks from ATAC-seq data"
+  - "Call accessible chromatin peaks from paired-end ATAC-seq"
+  - "Process multiple ATAC-seq samples in parallel"
+
+inputs:
+  - id: fastq_pairs
+    type: "record{sample_id: string, fwd: File, rev: File?}[]"
+    description: "ATAC-seq FASTQ files. For paired-end: provide fwd and rev."
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: genome_reference
+    type: enum
+    description: "Reference genome"
+    options: [GRCh38, GRCh37, GRCm39, GRCm38, custom]
+    default: GRCh38
+
+  - id: peak_type
+    type: enum
+    description: "Peak calling mode"
+    options: [narrow, broad]
+    default: narrow
+
+  - id: genome_size
+    type: string
+    description: "Effective genome size for MACS2 (hs, mm, ce, dm, or number)"
+    default: "hs"
+
+  - id: trimmer
+    type: enum
+    description: "Read trimming tool"
+    options: [fastp, trim_galore, skip]
+    default: fastp
+
+outputs:
+  - id: peaks
+    type: "File[]"
+    description: "Peak files (narrowPeak or broadPeak) per sample"
+
+  - id: bigwigs
+    type: "File[]"
+    description: "Normalized bigWig coverage tracks per sample"
+
+  - id: filtered_bams
+    type: "File[]"
+    description: "Filtered, deduplicated BAM files per sample"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for ATAC-seq FASTQ files and organism"
+      parameters:
+        prompt: "Please provide your ATAC-seq FASTQ files and organism."
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve input references to files"
+
+    - id: determine_genome
+      action: select_option
+      description: "Map organism to genome reference and MACS2 genome size"
+      parameters:
+        input_id: genome_reference
+        mapping:
+          human: {genome: GRCh38, genome_size: "hs"}
+          mouse: {genome: GRCm39, genome_size: "mm"}
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit atacseq workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/atacseq/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+      parameters:
+        poll_interval_seconds: 60
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve peaks, bigWigs, BAMs, and QC report"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with peak counts and links to outputs"
+
+hints: |
+  - ATAC-seq typically uses narrow peaks (open chromatin = sharp, focused signals)
+  - Unlike ChIP-seq, ATAC-seq does NOT use a control sample
+  - MACS2 --nomodel is always used (no fragment size estimation needed)
+  - --keep-dup all is used because duplicates are already filtered upstream
+  - genome_size shortcuts: 'hs' (human ~2.7e9), 'mm' (mouse ~1.87e9), 'ce' (C.elegans), 'dm' (Drosophila)
+  - Mitochondrial reads are common in ATAC-seq due to Tn5 transposase accessing mtDNA
+  - BWA-MEM2 requires ~32 GB RAM for human genome indexing
+  - Fragment size distribution is a key QC metric: should show nucleosome-free (<150bp) and mono-nucleosome (~200bp) peaks
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 32
+    min_cores: 8
+    estimated_storage_gb: 100
