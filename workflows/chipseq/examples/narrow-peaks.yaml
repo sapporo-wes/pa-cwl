@@ -1,0 +1,36 @@
+# Example: Narrow peak ChIP-seq (transcription factor binding)
+# Human paired-end ChIP-seq with IgG control
+
+fastq_fwd:
+  - class: File
+    path: /path/to/sample1_IP_R1.fastq.gz
+  - class: File
+    path: /path/to/sample2_IP_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: /path/to/sample1_IP_R2.fastq.gz
+  - class: File
+    path: /path/to/sample2_IP_R2.fastq.gz
+
+sample_ids:
+  - sample1_CTCF
+  - sample2_CTCF
+
+control_fastq_fwd:
+  class: File
+  path: /path/to/IgG_R1.fastq.gz
+
+control_fastq_rev:
+  class: File
+  path: /path/to/IgG_R2.fastq.gz
+
+control_id: IgG_control
+
+genome_fasta:
+  class: File
+  path: /path/to/GRCh38.primary_assembly.genome.fa
+
+peak_type: narrow
+genome_size: "hs"
+trimmer: fastp

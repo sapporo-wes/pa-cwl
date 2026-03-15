@@ -1,0 +1,31 @@
+# Example: Broad peak ChIP-seq (histone modification)
+# Human paired-end ChIP-seq for H3K27me3
+
+fastq_fwd:
+  - class: File
+    path: /path/to/sample1_H3K27me3_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: /path/to/sample1_H3K27me3_R2.fastq.gz
+
+sample_ids:
+  - sample1_H3K27me3
+
+control_fastq_fwd:
+  class: File
+  path: /path/to/input_R1.fastq.gz
+
+control_fastq_rev:
+  class: File
+  path: /path/to/input_R2.fastq.gz
+
+control_id: input_control
+
+genome_fasta:
+  class: File
+  path: /path/to/GRCh38.primary_assembly.genome.fa
+
+peak_type: broad
+genome_size: "hs"
+trimmer: fastp

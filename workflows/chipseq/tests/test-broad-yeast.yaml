@@ -1,0 +1,17 @@
+# Test input: ChIP-seq broad peak calling with yeast simulated reads
+# Uses RNA-seq reads as stand-in — peak calling will find few/no peaks
+# but the pipeline mechanics (broad mode) are fully tested
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R1.fastq.gz
+fastq_rev:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R2.fastq.gz
+sample_ids:
+  - yeast_chip_broad
+genome_fasta:
+  class: File
+  path: ../../../test-data/yeast/genome.fa
+peak_type: broad
+genome_size: "1.2e7"
+trimmer: fastp

@@ -1,0 +1,137 @@
+workflow: chipseq
+description: |
+  ChIP-seq peak calling pipeline. Performs QC, trimming, BWA-MEM2 alignment,
+  duplicate marking, BAM filtering, MACS2 peak calling (narrow or broad),
+  and bigWig coverage track generation. Supports optional control/input
+  samples for background subtraction.
+
+use_cases:
+  - "Call transcription factor binding peaks from ChIP-seq FASTQ files"
+  - "Identify histone modification regions (broad peaks) from ChIP-seq data"
+  - "Generate normalized bigWig tracks for genome browser visualization"
+  - "Process ChIP-seq data with matched input/IgG control"
+
+inputs:
+  - id: fastq_pairs
+    type: "record{sample_id: string, fwd: File, rev: File?}[]"
+    description: "Treatment/IP FASTQ files. For paired-end: provide fwd and rev."
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: control_fastq
+    type: "record{fwd: File, rev: File?}"
+    description: "Control/input sample FASTQ files (IgG, input DNA, etc.)"
+    required: false
+
+  - id: genome_reference
+    type: enum
+    description: "Reference genome"
+    options: [GRCh38, GRCh37, GRCm39, GRCm38, custom]
+    default: GRCh38
+
+  - id: peak_type
+    type: enum
+    description: "Peak calling mode"
+    options: [narrow, broad]
+    default: narrow
+
+  - id: genome_size
+    type: string
+    description: "Effective genome size for MACS2 (hs, mm, ce, dm, or number)"
+    default: "hs"
+
+  - id: trimmer
+    type: enum
+    description: "Read trimming tool"
+    options: [fastp, trim_galore, skip]
+    default: fastp
+
+outputs:
+  - id: peaks
+    type: "File[]"
+    description: "Peak files (narrowPeak or broadPeak) per sample"
+
+  - id: bigwigs
+    type: "File[]"
+    description: "Normalized bigWig coverage tracks per sample"
+
+  - id: filtered_bams
+    type: "File[]"
+    description: "Filtered, deduplicated BAM files per sample"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for ChIP-seq FASTQ files, control sample, and organism"
+      parameters:
+        prompt: "Please provide your ChIP-seq treatment FASTQ files, optional control/input sample, and organism."
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve input references to files"
+
+    - id: determine_genome
+      action: select_option
+      description: "Map organism to genome reference and MACS2 genome size"
+      parameters:
+        input_id: genome_reference
+        mapping:
+          human: {genome: GRCh38, genome_size: "hs"}
+          mouse: {genome: GRCm39, genome_size: "mm"}
+
+    - id: ask_peak_type
+      action: ask_user
+      description: "Ask about peak type if not specified"
+      parameters:
+        prompt: "What type of peaks? 'narrow' for transcription factors, 'broad' for histone marks (H3K27me3, H3K36me3, etc.)"
+        skip_if: "user has specified peak type"
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit chipseq workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/chipseq/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+      parameters:
+        poll_interval_seconds: 60
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve peaks, bigWigs, BAMs, and QC report"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with peak counts and links to outputs"
+
+hints: |
+  - Use 'narrow' peak type for transcription factor ChIP-seq (sharp, focused peaks)
+  - Use 'broad' peak type for histone modification ChIP-seq (H3K27me3, H3K36me3, etc.)
+  - H3K4me3 and H3K27ac are typically called as narrow peaks despite being histone marks
+  - Always include a control sample (IgG or input DNA) for reliable peak calling
+  - genome_size shortcuts: 'hs' (human ~2.7e9), 'mm' (mouse ~1.87e9), 'ce' (C.elegans), 'dm' (Drosophila)
+  - For custom genomes, calculate effective genome size or use the total genome length
+  - BWA-MEM2 requires ~32 GB RAM for human genome indexing
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 32
+    min_cores: 8
+    estimated_storage_gb: 100

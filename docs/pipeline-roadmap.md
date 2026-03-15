@@ -50,6 +50,35 @@ Kallisto Docker failure is ARM Mac-specific (BioContainers are x86-only, Rosetta
 
 ---
 
+### chipseq — ChIP-seq Peak Calling
+
+**Status: 1.0 — Narrow and broad peak modes tested**
+
+ChIP-seq analysis with QC, alignment, filtering, peak calling, and coverage track generation.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FastQC | Done | |
+| Trimming (fastp / Trim Galore) | Done | Switchable via input parameter |
+| BWA-MEM2 alignment + index | Done | Conditional index building |
+| samtools sort/index | Done | |
+| Picard MarkDuplicates | Done | |
+| samtools filter | Done | -F 1804 -f 2 -q 1 (ChIP-seq standard) |
+| MACS2 narrow peak calling | Done | For transcription factor binding |
+| MACS2 broad peak calling | Done | For histone modifications |
+| deepTools bamCoverage | Done | Normalized bigWig generation |
+| Optional control sample | Done | IgG/input DNA for background subtraction |
+| MultiQC | Done | Integrates FastQC, fastp, Picard |
+
+**Tested pathway matrix:**
+
+| Mode | Local |
+|------|-------|
+| Narrow peaks (no control) | Pass |
+| Broad peaks (no control) | Pass |
+
+---
+
 ### fetchngs — Public Data Retrieval
 
 **Status: 1.0 — FTP and sratools paths tested, accession validation + project/GEO resolution**
@@ -84,7 +113,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 | Pipeline | Stars | Domain | Description | Shared tools |
 |----------|-------|--------|-------------|--------------|
 | **sarek** | 554 | Variant Calling | Germline + somatic variant calling from WGS/WES/targeted. GATK HaplotypeCaller, Mutect2, Strelka2, DeepVariant, Manta, TIDDIT. | fastp, STAR (for RNA), BWA-MEM2, samtools, picard, MultiQC |
-| **chipseq** | 233 | Epigenomics | ChIP-seq peak calling and differential binding analysis. BWA, MACS2, DiffBind, Homer. | fastp, samtools, picard, MultiQC, featureCounts |
+| ~~**chipseq**~~ | 233 | Epigenomics | **Done (1.0)** — see chipseq section above |  |
 | **atacseq** | 220 | Epigenomics | ATAC-seq chromatin accessibility. BWA, MACS2, genrich, deepTools. | fastp, samtools, picard, MultiQC (nearly identical to chipseq) |
 
 ### Tier 2 — High impact, some new tool domains
@@ -135,7 +164,7 @@ Done                  Next up — shared tooling builds on previous
   ▼                         ▼
 ✓ rnaseq (1.0)        fastp, samtools, picard, MultiQC, STAR, featureCounts, RSeQC
 ✓ fetchngs (1.0)      utility — feeds all pipelines
-3. chipseq             + BWA-MEM, MACS2, deepTools
+✓ chipseq (1.0)       + BWA-MEM2, MACS2, deepTools, samtools-filter
 4. atacseq             ~90% shared with chipseq
 5. sarek               + GATK, Mutect2, Strelka2, DeepVariant, BWA-MEM2, VEP
 6. methylseq           + Bismark, bwa-meth, MethylDackel
@@ -171,8 +200,13 @@ Tools already in `tools/` that will be reused across pipelines:
 | pigz | x | x | x | x | x | x | x |
 | trim-galore | x | x | x | | x | | |
 
-New shared tools needed early:
-- **bwa-mem2** — chipseq, atacseq, sarek, methylseq
-- **deeptools** — chipseq, atacseq (bamCoverage, plotFingerprint, etc.)
-- **bedtools** — chipseq, atacseq, sarek, viralrecon
+New shared tools added:
+- **bwa-mem2** (index + align) — chipseq ✓, atacseq, sarek, methylseq
+- **deeptools** (bamCoverage) — chipseq ✓, atacseq
+- **samtools-filter** — chipseq ✓, atacseq
+- **samtools-sort-index** — chipseq ✓ (combined sort+index)
+- **macs2-callpeak** — chipseq ✓, atacseq
+
+New shared tools needed next:
+- **bedtools** — atacseq, sarek, viralrecon
 - **bcftools** — sarek, viralrecon
