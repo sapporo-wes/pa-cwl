@@ -1,0 +1,15 @@
+# Test input: Bisulfite-seq with yeast simulated reads
+# Uses RNA-seq reads as stand-in — methylation calls are not meaningful
+# but the pipeline mechanics are fully tested
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R1.fastq.gz
+fastq_rev:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R2.fastq.gz
+sample_ids:
+  - yeast_methyl
+genome_fasta:
+  class: File
+  path: ../../../test-data/yeast/genome.fa
+trimmer: trim_galore

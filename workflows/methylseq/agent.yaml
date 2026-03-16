@@ -1,0 +1,101 @@
+workflow: methylseq
+description: |
+  Bisulfite sequencing methylation pipeline using Bismark. Performs QC,
+  trimming, bisulfite-aware alignment, deduplication, and per-base
+  methylation extraction producing CpG bedGraph, coverage files, and
+  genome-wide cytosine reports.
+
+use_cases:
+  - "Extract CpG methylation from whole-genome bisulfite sequencing (WGBS) data"
+  - "Process paired-end bisulfite-seq FASTQ files through Bismark"
+  - "Generate methylation bedGraph and coverage files for downstream analysis"
+  - "Produce M-bias reports for bisulfite conversion quality assessment"
+
+inputs:
+  - id: fastq_pairs
+    type: "record{sample_id: string, fwd: File, rev: File?}[]"
+    description: "Bisulfite-seq FASTQ files."
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: genome_reference
+    type: enum
+    description: "Reference genome"
+    options: [GRCh38, GRCh37, GRCm39, GRCm38, custom]
+    default: GRCh38
+
+  - id: trimmer
+    type: enum
+    description: "Read trimming tool"
+    options: [trim_galore, fastp, skip]
+    default: trim_galore
+
+outputs:
+  - id: bedgraphs
+    type: "File[]"
+    description: "Methylation bedGraph files per sample"
+
+  - id: coverage_files
+    type: "File[]"
+    description: "Bismark coverage files per sample"
+
+  - id: sorted_bams
+    type: "File[]"
+    description: "Sorted, deduplicated BAM files"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for bisulfite-seq FASTQ files and organism"
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve input references to files"
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit methylseq workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/methylseq/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve methylation data and reports"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with links to outputs"
+
+hints: |
+  - Trim Galore is the standard trimmer for bisulfite data (handles Illumina adapter artifacts)
+  - Bismark genome preparation takes ~30 minutes for human genome
+  - M-bias reports are critical for assessing bisulfite conversion efficiency
+  - bedGraph files contain per-CpG methylation percentages
+  - Coverage files contain read counts supporting each methylation call
+  - For RRBS data, deduplication should be skipped (planned for v1.1)
+  - bwa-meth + MethylDackel path planned for v1.1
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 32
+    min_cores: 8
+    estimated_storage_gb: 200

@@ -1,0 +1,24 @@
+# Example: Whole-genome bisulfite sequencing (WGBS)
+# Human paired-end WGBS with Trim Galore
+
+fastq_fwd:
+  - class: File
+    path: /path/to/sample1_R1.fastq.gz
+  - class: File
+    path: /path/to/sample2_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: /path/to/sample1_R2.fastq.gz
+  - class: File
+    path: /path/to/sample2_R2.fastq.gz
+
+sample_ids:
+  - sample1_WGBS
+  - sample2_WGBS
+
+genome_fasta:
+  class: File
+  path: /path/to/GRCh38.primary_assembly.genome.fa
+
+trimmer: trim_galore

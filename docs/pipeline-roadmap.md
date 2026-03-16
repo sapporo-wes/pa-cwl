@@ -112,6 +112,34 @@ Germline variant calling with GATK best practices: alignment, dedup, HaplotypeCa
 
 ---
 
+### methylseq — Bisulfite Sequencing Methylation
+
+**Status: 1.0 — Bismark path tested**
+
+Bisulfite sequencing analysis with Bismark: alignment, deduplication, methylation extraction.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FastQC | Done | |
+| Trim Galore / fastp | Done | Switchable; Trim Galore standard for bisulfite |
+| Bismark genome preparation | Done | Conditional index building |
+| Bismark alignment | Done | bowtie2 backend |
+| Bismark deduplication | Done | |
+| samtools sort/index | Done | |
+| Bismark methylation extractor | Done | bedGraph + coverage + cytosine report |
+| M-bias reports | Done | |
+| MultiQC | Done | Integrates FastQC, Bismark reports |
+| bwa-meth + MethylDackel path | Planned v1.1 | Alternative aligner |
+| RRBS mode (skip dedup) | Planned v1.1 | |
+
+**Tested pathway matrix:**
+
+| Mode | Local |
+|------|-------|
+| Bismark (paired-end, Trim Galore) | Pass |
+
+---
+
 ### atacseq — ATAC-seq Chromatin Accessibility
 
 **Status: 1.0 — Narrow peak mode tested**
@@ -180,7 +208,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 | Pipeline | Stars | Domain | Description | New tools needed |
 |----------|-------|--------|-------------|-----------------|
 | **scrnaseq** | 316 | Single-cell | 10x, Drop-seq, Smart-seq2 scRNA-seq. STARsolo, CellRanger, Alevin, Kallisto-BUStools. | STARsolo, cellranger, alevin-fry, bustools, scanpy/seurat |
-| **methylseq** | 189 | Epigenomics | Bisulfite/EM-seq methylation. Bismark or bwa-meth + MethylDackel. | bismark, bwa-meth, methyldackel |
+| ~~**methylseq**~~ | 189 | Epigenomics | **Done (1.0 Bismark)** — see methylseq section above |  |
 | **ampliseq** | 236 | Microbiome | 16S/ITS/18S amplicon analysis. Cutadapt, DADA2, QIIME2. | cutadapt, DADA2, QIIME2 (R/Python heavy) |
 | **viralrecon** | 159 | Virology | Viral genome assembly + variant calling. Used massively for SARS-CoV-2 surveillance. | ivar, nextclade, pangolin, bcftools, bedtools |
 
@@ -226,7 +254,7 @@ Done                  Next up — shared tooling builds on previous
 ✓ chipseq (1.0)       + BWA-MEM2, MACS2, deepTools, samtools-filter
 ✓ atacseq (1.0)       ~90% shared with chipseq + --nomodel
 ✓ sarek (1.0)         + GATK4 HaplotypeCaller, VariantFiltration, prepare-gatk-reference
-6. methylseq           + Bismark, bwa-meth, MethylDackel
+✓ methylseq (1.0)     + Bismark (genome-prep, align, dedup, methylation-extractor)
 7. scrnaseq            + STARsolo, alevin-fry, bustools
 8. viralrecon          + ivar, nextclade, pangolin
 9. ampliseq            + DADA2, QIIME2 (R/Python heavy)

@@ -9,6 +9,7 @@ requirements:
   ResourceRequirement:
     coresMin: 4
     ramMin: 4096
+  InlineJavascriptRequirement: {}
 
 hints:
   DockerRequirement:
@@ -57,9 +58,9 @@ outputs:
   trimming_report_fwd:
     type: File
     outputBinding:
-      glob: "*_trimming_report.txt"
+      glob: $(inputs.fastq_fwd.basename)_trimming_report.txt
 
   trimming_report_rev:
     type: File?
     outputBinding:
-      glob: "*_val_2_trimming_report.txt"
+      glob: "$(inputs.fastq_rev ? inputs.fastq_rev.basename + '_trimming_report.txt' : 'NONEXISTENT')"
