@@ -1,0 +1,135 @@
+workflow: sarek
+description: |
+  Germline variant calling pipeline based on GATK best practices.
+  Performs QC, trimming, BWA-MEM2 alignment, duplicate marking,
+  optional BQSR, GATK4 HaplotypeCaller, hard filtering, and
+  QC reporting. Supports WGS, WES, and targeted sequencing.
+
+use_cases:
+  - "Call germline SNPs and indels from whole-genome sequencing FASTQ files"
+  - "Call germline variants from whole-exome sequencing with target intervals"
+  - "Process multiple WGS/WES samples through GATK best practices pipeline"
+  - "Generate per-sample gVCFs for downstream joint calling"
+
+inputs:
+  - id: fastq_pairs
+    type: "record{sample_id: string, fwd: File, rev: File?}[]"
+    description: "FASTQ files for germline samples."
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: genome_reference
+    type: enum
+    description: "Reference genome"
+    options: [GRCh38, GRCh37, custom]
+    default: GRCh38
+
+  - id: known_sites
+    type: "File[]"
+    description: "Known variant sites VCFs for BQSR (dbSNP, Mills indels)"
+    required: false
+
+  - id: dbsnp
+    type: File
+    description: "dbSNP VCF for variant annotation"
+    required: false
+
+  - id: intervals
+    type: File
+    description: "Target intervals BED for WES/targeted"
+    required: false
+
+  - id: emit_gvcf
+    type: boolean
+    description: "Output per-sample gVCF for joint calling"
+    default: false
+
+  - id: trimmer
+    type: enum
+    description: "Read trimming tool"
+    options: [fastp, trim_galore, skip]
+    default: fastp
+
+outputs:
+  - id: filtered_vcfs
+    type: "File[]"
+    description: "Hard-filtered VCF files per sample"
+
+  - id: raw_vcfs
+    type: "File[]"
+    description: "Raw HaplotypeCaller VCFs (or gVCFs)"
+
+  - id: aligned_bams
+    type: "File[]"
+    description: "Marked-duplicate BAM files per sample"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for FASTQ files, genome, and sequencing type (WGS/WES)"
+      parameters:
+        prompt: "Please provide your sequencing FASTQ files, reference genome, and sequencing type."
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve input references to files"
+
+    - id: determine_genome
+      action: select_option
+      description: "Map organism to genome reference and GATK resource bundle"
+      parameters:
+        input_id: genome_reference
+        mapping:
+          human_hg38: {genome: GRCh38}
+          human_hg37: {genome: GRCh37}
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit sarek workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/sarek/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+      parameters:
+        poll_interval_seconds: 60
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve VCFs, BAMs, and QC report"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with variant counts and links to outputs"
+
+hints: |
+  - For WES/targeted: always provide an intervals BED file
+  - For BQSR: provide known_sites VCFs (dbSNP + Mills/1000G known indels)
+  - BQSR is skipped if known_sites is not provided
+  - emit_gvcf=true produces per-sample gVCFs for joint calling across a cohort
+  - Hard filtering uses GATK recommended thresholds (QD, FS, MQ, etc.)
+  - BWA-MEM2 requires ~32 GB RAM for human genome indexing
+  - HaplotypeCaller is compute-intensive; ~4-8 hours per 30x WGS sample
+  - v1.0 supports germline calling only; somatic calling planned for v2.0
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 32
+    min_cores: 8
+    estimated_storage_gb: 200

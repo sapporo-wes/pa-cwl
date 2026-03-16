@@ -1,0 +1,31 @@
+# Example: Germline WGS variant calling
+# Human whole-genome sequencing with BQSR and dbSNP annotation
+
+fastq_fwd:
+  - class: File
+    path: /path/to/sample1_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: /path/to/sample1_R2.fastq.gz
+
+sample_ids:
+  - sample1
+
+genome_fasta:
+  class: File
+  path: /path/to/GRCh38.primary_assembly.genome.fa
+
+dbsnp:
+  class: File
+  path: /path/to/dbsnp_146.hg38.vcf.gz
+
+known_sites:
+  - class: File
+    path: /path/to/dbsnp_146.hg38.vcf.gz
+  - class: File
+    path: /path/to/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+  - class: File
+    path: /path/to/Homo_sapiens_assembly38.known_indels.vcf.gz
+
+trimmer: fastp

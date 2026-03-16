@@ -79,6 +79,39 @@ ChIP-seq analysis with QC, alignment, filtering, peak calling, and coverage trac
 
 ---
 
+### sarek — Germline Variant Calling
+
+**Status: 1.0 — Germline HaplotypeCaller tested (without BQSR)**
+
+Germline variant calling with GATK best practices: alignment, dedup, HaplotypeCaller, hard filtering.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FastQC | Done | |
+| Trimming (fastp / Trim Galore) | Done | Switchable via input parameter |
+| BWA-MEM2 alignment + index | Done | Shared with chipseq/atacseq |
+| samtools sort/index | Done | |
+| Picard MarkDuplicates | Done | |
+| Reference prep (faidx + dict) | Done | Auto-generated if not provided |
+| GATK4 HaplotypeCaller | Done | Per-sample VCF or gVCF mode |
+| GATK4 VariantFiltration | Done | GATK recommended hard filters |
+| samtools stats | Done | Alignment QC for MultiQC |
+| bcftools stats | Done | VCF QC for MultiQC |
+| MultiQC | Done | Integrates FastQC, fastp, Picard, samtools, bcftools |
+| BQSR | Planned v1.1 | Requires known sites VCFs |
+| Joint calling (GenomicsDBImport) | Planned v1.1 | Multi-sample cohort calling |
+| Somatic calling (Mutect2) | Planned v2.0 | Tumor-normal pairs |
+| Annotation (VEP/snpEff) | Planned v2.0 | Functional variant annotation |
+| Scatter-gather parallelization | Planned v1.1 | For large genomes |
+
+**Tested pathway matrix:**
+
+| Mode | Local |
+|------|-------|
+| Germline (no BQSR, no dbSNP) | Pass |
+
+---
+
 ### atacseq — ATAC-seq Chromatin Accessibility
 
 **Status: 1.0 — Narrow peak mode tested**
@@ -138,7 +171,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 
 | Pipeline | Stars | Domain | Description | Shared tools |
 |----------|-------|--------|-------------|--------------|
-| **sarek** | 554 | Variant Calling | Germline + somatic variant calling from WGS/WES/targeted. GATK HaplotypeCaller, Mutect2, Strelka2, DeepVariant, Manta, TIDDIT. | fastp, STAR (for RNA), BWA-MEM2, samtools, picard, MultiQC |
+| ~~**sarek**~~ | 554 | Variant Calling | **Done (1.0 germline)** — see sarek section above |  |
 | ~~**chipseq**~~ | 233 | Epigenomics | **Done (1.0)** — see chipseq section above |  |
 | ~~**atacseq**~~ | 220 | Epigenomics | **Done (1.0)** — see atacseq section above |  |
 
@@ -192,7 +225,7 @@ Done                  Next up — shared tooling builds on previous
 ✓ fetchngs (1.0)      utility — feeds all pipelines
 ✓ chipseq (1.0)       + BWA-MEM2, MACS2, deepTools, samtools-filter
 ✓ atacseq (1.0)       ~90% shared with chipseq + --nomodel
-5. sarek               + GATK, Mutect2, Strelka2, DeepVariant, BWA-MEM2, VEP
+✓ sarek (1.0)         + GATK4 HaplotypeCaller, VariantFiltration, prepare-gatk-reference
 6. methylseq           + Bismark, bwa-meth, MethylDackel
 7. scrnaseq            + STARsolo, alevin-fry, bustools
 8. viralrecon          + ivar, nextclade, pangolin

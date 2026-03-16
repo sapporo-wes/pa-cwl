@@ -1,0 +1,39 @@
+# Example: Germline WES (whole-exome) variant calling
+# Human exome sequencing with intervals BED
+
+fastq_fwd:
+  - class: File
+    path: /path/to/sample1_R1.fastq.gz
+  - class: File
+    path: /path/to/sample2_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: /path/to/sample1_R2.fastq.gz
+  - class: File
+    path: /path/to/sample2_R2.fastq.gz
+
+sample_ids:
+  - sample1
+  - sample2
+
+genome_fasta:
+  class: File
+  path: /path/to/GRCh38.primary_assembly.genome.fa
+
+intervals:
+  class: File
+  path: /path/to/exome_targets.bed
+
+dbsnp:
+  class: File
+  path: /path/to/dbsnp_146.hg38.vcf.gz
+
+known_sites:
+  - class: File
+    path: /path/to/dbsnp_146.hg38.vcf.gz
+  - class: File
+    path: /path/to/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+
+trimmer: fastp
+emit_gvcf: true
