@@ -1,0 +1,112 @@
+workflow: viralrecon
+description: |
+  Viral genome variant calling and consensus pipeline. Performs QC,
+  trimming, alignment, optional primer trimming, variant calling with
+  iVar, and consensus sequence generation. Designed for SARS-CoV-2
+  surveillance but works with any viral reference genome.
+
+use_cases:
+  - "Call variants and generate consensus from SARS-CoV-2 amplicon sequencing"
+  - "Process viral whole-genome sequencing for variant surveillance"
+  - "Generate consensus sequences for lineage assignment"
+  - "QC viral sequencing libraries with coverage and variant metrics"
+
+inputs:
+  - id: fastq_pairs
+    type: "record{sample_id: string, fwd: File, rev: File?}[]"
+    description: "Viral sequencing FASTQ files"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: viral_reference
+    type: enum
+    description: "Viral reference genome"
+    options: [SARS-CoV-2, custom]
+    default: SARS-CoV-2
+
+  - id: primer_bed
+    type: File?
+    description: "Primer BED file for amplicon mode (e.g., ARTIC v3/v4)"
+
+  - id: trimmer
+    type: enum
+    description: "Read trimming tool"
+    options: [fastp, trim_galore, skip]
+    default: fastp
+
+outputs:
+  - id: consensus_fastas
+    type: "File[]"
+    description: "Consensus FASTA sequences per sample"
+
+  - id: variants_tsvs
+    type: "File[]"
+    description: "iVar variant calls per sample"
+
+  - id: aligned_bams
+    type: "File[]"
+    description: "Sorted BAM files"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for viral sequencing FASTQ files and reference"
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve input references to files"
+
+    - id: determine_mode
+      action: ask_user
+      description: "Determine amplicon vs whole-genome mode; ask for primer BED if amplicon"
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit viralrecon workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/viralrecon/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve consensus sequences and variant calls"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with links to outputs"
+
+hints: |
+  - SARS-CoV-2 reference: NC_045512.2 (Wuhan-Hu-1)
+  - ARTIC primer schemes are the standard for SARS-CoV-2 amplicon sequencing
+  - For amplicon data, primer_bed is required for accurate variant calling
+  - ivar trim removes primer sequences that would otherwise appear as variants
+  - Minimum depth of 10 is standard; increase for higher confidence
+  - Consensus positions below min_depth are masked with N
+  - Variant frequency threshold: 0.25 for variant calling, 0.5 for consensus
+  - For whole-genome (non-amplicon) sequencing, omit primer_bed
+  - Pangolin lineage assignment planned for v1.1
+  - Nextclade annotation planned for v1.1
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 8
+    min_cores: 4
+    estimated_storage_gb: 10

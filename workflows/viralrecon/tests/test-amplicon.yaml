@@ -1,0 +1,23 @@
+# Test: viralrecon amplicon mode with simulated viral reads
+
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/viral/viral_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: ../../../test-data/viral/viral_R2.fastq.gz
+
+sample_ids:
+  - viral_sample
+
+genome_fasta:
+  class: File
+  path: ../../../test-data/viral/viral_ref.fa
+
+primer_bed:
+  class: File
+  path: ../../../test-data/viral/primers.bed
+
+trimmer: fastp
+min_depth: 5

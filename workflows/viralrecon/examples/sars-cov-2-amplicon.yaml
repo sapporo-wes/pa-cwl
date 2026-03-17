@@ -1,0 +1,28 @@
+# SARS-CoV-2 amplicon sequencing (ARTIC protocol)
+
+fastq_fwd:
+  - class: File
+    path: /path/to/sample1_R1.fastq.gz
+  - class: File
+    path: /path/to/sample2_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: /path/to/sample1_R2.fastq.gz
+  - class: File
+    path: /path/to/sample2_R2.fastq.gz
+
+sample_ids:
+  - sample1
+  - sample2
+
+genome_fasta:
+  class: File
+  path: /path/to/NC_045512.2.fa
+
+primer_bed:
+  class: File
+  path: /path/to/artic_v4.1_primers.bed
+
+trimmer: fastp
+min_depth: 10

@@ -222,6 +222,37 @@ Single-cell RNA-seq quantification using STARsolo. Barcode-aware alignment, UMI 
 
 ---
 
+### viralrecon — Viral Variant Calling and Consensus
+
+**Status: 1.0 — iVar amplicon path tested**
+
+Viral genome variant calling and consensus generation using iVar. Supports amplicon (primer-trimmed) and whole-genome sequencing modes.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FastQC | Done | |
+| Trimming (fastp / Trim Galore) | Done | Switchable via input parameter |
+| BWA-MEM2 alignment + index | Done | Shared with chipseq/atacseq/sarek |
+| samtools sort/index | Done | |
+| Picard MarkDuplicates | Done | |
+| iVar trim (primer removal) | Done | Conditional on primer_bed input |
+| iVar variants | Done | samtools mpileup piped to ivar variants |
+| iVar consensus | Done | Low-coverage positions masked with N |
+| samtools stats | Done | Alignment QC for MultiQC |
+| MultiQC | Done | Integrates FastQC, fastp, Picard, samtools |
+| Pangolin lineage assignment | Planned v1.1 | SARS-CoV-2 specific |
+| Nextclade annotation | Planned v1.1 | Multi-pathogen support |
+| bcftools variant calling path | Planned v1.1 | Alternative to iVar |
+| Kraken2 host filtering | Planned v1.1 | |
+
+**Tested pathway matrix:**
+
+| Mode | Docker |
+|------|--------|
+| Amplicon (iVar, simulated viral genome) | Pass |
+
+---
+
 ## Conversion Targets
 
 Ranked by GitHub stars (proxy for community adoption). All are released/stable nf-core pipelines.
@@ -241,7 +272,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 | ~~**scrnaseq**~~ | 316 | Single-cell | **Done (1.0 STARsolo)** — see scrnaseq section above |  |
 | ~~**methylseq**~~ | 189 | Epigenomics | **Done (1.0 Bismark)** — see methylseq section above |  |
 | **ampliseq** | 236 | Microbiome | 16S/ITS/18S amplicon analysis. Cutadapt, DADA2, QIIME2. | cutadapt, DADA2, QIIME2 (R/Python heavy) |
-| **viralrecon** | 159 | Virology | Viral genome assembly + variant calling. Used massively for SARS-CoV-2 surveillance. | ivar, nextclade, pangolin, bcftools, bedtools |
+| ~~**viralrecon**~~ | 159 | Virology | **Done (1.0 iVar amplicon)** — see viralrecon section above |  |
 
 ### Tier 3 — Specialized, mostly new tool stacks
 
@@ -287,7 +318,7 @@ Done                  Next up — shared tooling builds on previous
 ✓ sarek (1.0)         + GATK4 HaplotypeCaller, VariantFiltration, prepare-gatk-reference
 ✓ methylseq (1.0)     + Bismark (genome-prep, align, dedup, methylation-extractor)
 ✓ scrnaseq (1.0)      + STARsolo (barcode-aware alignment + count matrices)
-8. viralrecon          + ivar, nextclade, pangolin
+✓ viralrecon (1.0)    + ivar (trim, variants, consensus)
 9. ampliseq            + DADA2, QIIME2 (R/Python heavy)
 10. mag                + megahit, MetaBAT2, GTDB-Tk
 11. taxprofiler        + Kraken2, MetaPhlAn, Centrifuge
