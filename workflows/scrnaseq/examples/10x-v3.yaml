@@ -1,0 +1,35 @@
+# 10x Chromium v3 single-cell RNA-seq
+# Protocol: 16bp barcode + 12bp UMI in R1, cDNA in R2
+
+fastq_barcode:
+  - class: File
+    path: /path/to/sample1_S1_L001_R1_001.fastq.gz
+  - class: File
+    path: /path/to/sample2_S2_L001_R1_001.fastq.gz
+
+fastq_cdna:
+  - class: File
+    path: /path/to/sample1_S1_L001_R2_001.fastq.gz
+  - class: File
+    path: /path/to/sample2_S2_L001_R2_001.fastq.gz
+
+sample_ids:
+  - sample1
+  - sample2
+
+genome_fasta:
+  class: File
+  path: /path/to/GRCh38.primary_assembly.genome.fa
+
+gtf:
+  class: File
+  path: /path/to/gencode.v44.primary_assembly.annotation.gtf
+
+barcode_whitelist:
+  class: File
+  path: /path/to/3M-february-2018.txt.gz
+
+# 10x v3 defaults
+cb_len: 16
+umi_len: 12
+solo_strand: "Forward"

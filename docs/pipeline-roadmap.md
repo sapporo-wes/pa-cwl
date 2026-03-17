@@ -191,6 +191,37 @@ Downloads FASTQ from ENA/SRA and generates samplesheets for downstream workflows
 
 ---
 
+### scrnaseq — Single-Cell RNA-seq
+
+**Status: 1.0 — STARsolo path tested (10x v3 format)**
+
+Single-cell RNA-seq quantification using STARsolo. Barcode-aware alignment, UMI deduplication, and gene-barcode count matrix generation.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FastQC | Done | Both barcode (R1) and cDNA (R2) reads |
+| STAR genome index | Done | Reused from rnaseq pipeline |
+| STARsolo alignment + quant | Done | CB_UMI_Simple mode |
+| Gene count matrix (raw) | Done | MEX format: barcodes.tsv, features.tsv, matrix.mtx |
+| GeneFull count matrix | Done | Includes intronic reads (useful for snRNA-seq) |
+| Cell filtering | Done | CellRanger2_3, EmptyDrops_CR, TopCells, or None |
+| MultiQC | Done | Integrates FastQC + STAR logs |
+| 10x Chromium v2/v3 | Done | Via cb_len/umi_len parameters |
+| Drop-seq | Done | cb_len=12, umi_len=8 |
+| Alevin-Fry path | Planned v1.1 | Salmon-based pseudo-alignment |
+| Kallisto+BUStools path | Planned v1.1 | |
+| CellRanger path | Not planned | Licensing constraints |
+| Smart-seq2 (plate-based) | Planned v1.1 | No barcode demux needed |
+| Empty droplet detection (R) | Planned v1.1 | dropletUtils::emptyDrops |
+
+**Tested pathway matrix:**
+
+| Mode | Docker |
+|------|--------|
+| STARsolo (10x v3 format, yeast) | Pass |
+
+---
+
 ## Conversion Targets
 
 Ranked by GitHub stars (proxy for community adoption). All are released/stable nf-core pipelines.
@@ -207,7 +238,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 
 | Pipeline | Stars | Domain | Description | New tools needed |
 |----------|-------|--------|-------------|-----------------|
-| **scrnaseq** | 316 | Single-cell | 10x, Drop-seq, Smart-seq2 scRNA-seq. STARsolo, CellRanger, Alevin, Kallisto-BUStools. | STARsolo, cellranger, alevin-fry, bustools, scanpy/seurat |
+| ~~**scrnaseq**~~ | 316 | Single-cell | **Done (1.0 STARsolo)** — see scrnaseq section above |  |
 | ~~**methylseq**~~ | 189 | Epigenomics | **Done (1.0 Bismark)** — see methylseq section above |  |
 | **ampliseq** | 236 | Microbiome | 16S/ITS/18S amplicon analysis. Cutadapt, DADA2, QIIME2. | cutadapt, DADA2, QIIME2 (R/Python heavy) |
 | **viralrecon** | 159 | Virology | Viral genome assembly + variant calling. Used massively for SARS-CoV-2 surveillance. | ivar, nextclade, pangolin, bcftools, bedtools |
@@ -255,7 +286,7 @@ Done                  Next up — shared tooling builds on previous
 ✓ atacseq (1.0)       ~90% shared with chipseq + --nomodel
 ✓ sarek (1.0)         + GATK4 HaplotypeCaller, VariantFiltration, prepare-gatk-reference
 ✓ methylseq (1.0)     + Bismark (genome-prep, align, dedup, methylation-extractor)
-7. scrnaseq            + STARsolo, alevin-fry, bustools
+✓ scrnaseq (1.0)      + STARsolo (barcode-aware alignment + count matrices)
 8. viralrecon          + ivar, nextclade, pangolin
 9. ampliseq            + DADA2, QIIME2 (R/Python heavy)
 10. mag                + megahit, MetaBAT2, GTDB-Tk
@@ -281,8 +312,9 @@ Tools already in `tools/` that will be reused across pipelines:
 | samtools-sort | x | x | x | x | x | | x |
 | samtools-index | x | x | x | x | x | | x |
 | picard-markduplicates | x | x | x | x | x | | |
-| star-align | x | | | | | x | |
+| star-align | x | | | | | | |
 | star-genome-generate | x | | | | | x | |
+| starsolo | | | | | | x | |
 | featurecounts | x | x | x | | | | |
 | pigz | x | x | x | x | x | x | x |
 | trim-galore | x | x | x | | x | | |
@@ -293,6 +325,9 @@ New shared tools added:
 - **samtools-filter** — chipseq ✓, atacseq
 - **samtools-sort-index** — chipseq ✓ (combined sort+index)
 - **macs2-callpeak** — chipseq ✓, atacseq
+
+New tools added:
+- **starsolo** — scrnaseq ✓ (STARsolo barcode-aware alignment + count matrices)
 
 New shared tools needed next:
 - **bedtools** — atacseq, sarek, viralrecon

@@ -1,0 +1,109 @@
+workflow: scrnaseq
+description: |
+  Single-cell RNA-seq quantification pipeline using STARsolo. Performs QC,
+  barcode-aware alignment, UMI deduplication, and gene-barcode count matrix
+  generation for 10x Chromium, Drop-seq, and similar protocols.
+
+use_cases:
+  - "Quantify 10x Chromium scRNA-seq into gene-barcode count matrices"
+  - "Process Drop-seq data through STARsolo for cell-level gene expression"
+  - "Generate filtered and raw count matrices for downstream analysis with Seurat/scanpy"
+  - "QC single-cell RNA-seq libraries with FastQC and STAR alignment metrics"
+
+inputs:
+  - id: fastq_pairs
+    type: "record{sample_id: string, barcode: File, cdna: File}[]"
+    description: "Single-cell FASTQ files (R1=barcode+UMI, R2=cDNA)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: genome_reference
+    type: enum
+    description: "Reference genome"
+    options: [GRCh38, GRCh37, GRCm39, GRCm38, custom]
+    default: GRCh38
+
+  - id: protocol
+    type: enum
+    description: "Single-cell protocol"
+    options: [10x_v3, 10x_v2, 10x_5prime, drop_seq, custom]
+    default: 10x_v3
+
+outputs:
+  - id: solo_out_dirs
+    type: "Directory[]"
+    description: "STARsolo output directories with gene-barcode count matrices"
+
+  - id: aligned_bams
+    type: "File[]"
+    description: "Coordinate-sorted BAM files per sample"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for scRNA-seq FASTQ files, protocol, and organism"
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve input references to files"
+
+    - id: resolve_protocol
+      action: resolve_protocol
+      description: "Set barcode/UMI parameters based on protocol selection"
+      parameters:
+        protocol_map:
+          10x_v3: {cb_len: 16, umi_len: 12, solo_strand: Forward}
+          10x_v2: {cb_len: 16, umi_len: 10, solo_strand: Forward}
+          10x_5prime: {cb_len: 16, umi_len: 12, solo_strand: Reverse}
+          drop_seq: {cb_len: 12, umi_len: 8, solo_strand: Forward}
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit scrnaseq workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/scrnaseq/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve count matrices and reports"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with links to outputs"
+
+hints: |
+  - For 10x Chromium: R1 = barcode+UMI, R2 = cDNA. STARsolo expects cDNA first in --readFilesIn
+  - Barcode whitelists: 10x v3 uses 3M-february-2018.txt, v2 uses 737K-august-2016.txt
+  - STAR whitelists are bundled in STAR installations under lib/STARsolo/whitelists/
+  - No trimming needed for 10x/Drop-seq (STAR handles soft-clipping)
+  - Smart-seq2 plate-based data is not yet supported (planned v1.1)
+  - Gene/ directory: exonic reads only. GeneFull/: includes intronic reads (useful for snRNA-seq, RNA velocity)
+  - CellRanger2_3 filtering is the default; use EmptyDrops_CR for more sophisticated filtering
+  - For very small expected cell counts (<500), consider TopCells or None filtering
+  - Output count matrices are in 10x MEX format: barcodes.tsv.gz, features.tsv.gz, matrix.mtx.gz
+  - filtered/ = cell-containing droplets only; raw/ = all barcodes above threshold
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 32
+    min_cores: 8
+    estimated_storage_gb: 100
