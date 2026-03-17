@@ -1,0 +1,24 @@
+# Test: 16S V4 amplicon analysis with DADA2
+
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/amplicon/sample1_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: ../../../test-data/amplicon/sample1_R2.fastq.gz
+
+sample_ids:
+  - sample1
+
+# V4 primers (515F/806R)
+primer_fwd: "GTGYCAGCMGCCGCGGTAA"
+primer_rev: "GGACTACNVGGGTWTCTAAT"
+
+taxonomy_db:
+  class: File
+  path: ../../../test-data/amplicon/taxonomy_ref.fasta
+
+# No truncation for test data (short amplicons)
+trunc_len_fwd: 0
+trunc_len_rev: 0

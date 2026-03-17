@@ -1,0 +1,30 @@
+# 16S V4 paired-end amplicon sequencing
+
+fastq_fwd:
+  - class: File
+    path: /path/to/sample1_R1.fastq.gz
+  - class: File
+    path: /path/to/sample2_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: /path/to/sample1_R2.fastq.gz
+  - class: File
+    path: /path/to/sample2_R2.fastq.gz
+
+sample_ids:
+  - sample1
+  - sample2
+
+# V4 primers (515F/806R)
+primer_fwd: "GTGYCAGCMGCCGCGGTAA"
+primer_rev: "GGACTACNVGGGTWTCTAAT"
+
+# SILVA 138.1 reference (download from https://zenodo.org/record/4587955)
+taxonomy_db:
+  class: File
+  path: /path/to/silva_nr99_v138.1_train_set.fa.gz
+
+# Truncation lengths (adjust based on quality profiles)
+trunc_len_fwd: 230
+trunc_len_rev: 200

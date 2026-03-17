@@ -222,6 +222,36 @@ Single-cell RNA-seq quantification using STARsolo. Barcode-aware alignment, UMI 
 
 ---
 
+### ampliseq — 16S/ITS Amplicon Sequencing
+
+**Status: 1.0 — DADA2 path tested (16S V4 paired-end)**
+
+Amplicon sequencing analysis with Cutadapt primer trimming and DADA2 for ASV inference, chimera removal, and taxonomy assignment.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FastQC | Done | |
+| Cutadapt primer trimming | Done | 5'-anchored primer removal, per-sample scatter |
+| DADA2 filterAndTrim | Done | Quality filtering with configurable truncation |
+| DADA2 learnErrors | Done | Error model learned across all samples |
+| DADA2 dada + mergePairs | Done | ASV inference and pair merging |
+| DADA2 removeBimeraDenovo | Done | Chimera removal |
+| DADA2 assignTaxonomy | Done | Naive Bayesian classifier (SILVA, UNITE) |
+| ASV count table | Done | Samples x ASVs CSV |
+| Representative sequences | Done | FASTA of unique ASVs |
+| MultiQC | Done | Integrates FastQC + Cutadapt |
+| QIIME2 integration | Planned v1.1 | Phylogenetic diversity, ordination |
+| Single-end mode | Planned v1.1 | |
+| Species-level assignment | Planned v1.1 | addSpecies with exact matching |
+
+**Tested pathway matrix:**
+
+| Mode | Docker |
+|------|--------|
+| 16S V4 paired-end (simulated, 3 ASVs) | Pass |
+
+---
+
 ### viralrecon — Viral Variant Calling and Consensus
 
 **Status: 1.0 — iVar amplicon path tested**
@@ -271,7 +301,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 |----------|-------|--------|-------------|-----------------|
 | ~~**scrnaseq**~~ | 316 | Single-cell | **Done (1.0 STARsolo)** — see scrnaseq section above |  |
 | ~~**methylseq**~~ | 189 | Epigenomics | **Done (1.0 Bismark)** — see methylseq section above |  |
-| **ampliseq** | 236 | Microbiome | 16S/ITS/18S amplicon analysis. Cutadapt, DADA2, QIIME2. | cutadapt, DADA2, QIIME2 (R/Python heavy) |
+| ~~**ampliseq**~~ | 236 | Microbiome | **Done (1.0 DADA2)** — see ampliseq section above |  |
 | ~~**viralrecon**~~ | 159 | Virology | **Done (1.0 iVar amplicon)** — see viralrecon section above |  |
 
 ### Tier 3 — Specialized, mostly new tool stacks
@@ -319,7 +349,7 @@ Done                  Next up — shared tooling builds on previous
 ✓ methylseq (1.0)     + Bismark (genome-prep, align, dedup, methylation-extractor)
 ✓ scrnaseq (1.0)      + STARsolo (barcode-aware alignment + count matrices)
 ✓ viralrecon (1.0)    + ivar (trim, variants, consensus)
-9. ampliseq            + DADA2, QIIME2 (R/Python heavy)
+✓ ampliseq (1.0)      + cutadapt, DADA2 (R-based ASV inference + taxonomy)
 10. mag                + megahit, MetaBAT2, GTDB-Tk
 11. taxprofiler        + Kraken2, MetaPhlAn, Centrifuge
 12. nanoseq            + minimap2, NanoPlot
@@ -335,20 +365,20 @@ Done                  Next up — shared tooling builds on previous
 
 Tools already in `tools/` that will be reused across pipelines:
 
-| Tool | rnaseq | chipseq | atacseq | sarek | methylseq | scrnaseq | viralrecon |
-|------|--------|---------|---------|-------|-----------|----------|------------|
-| fastp | x | x | x | x | x | x | x |
-| fastqc | x | x | x | x | x | x | x |
-| multiqc | x | x | x | x | x | x | x |
-| samtools-sort | x | x | x | x | x | | x |
-| samtools-index | x | x | x | x | x | | x |
-| picard-markduplicates | x | x | x | x | x | | |
-| star-align | x | | | | | | |
-| star-genome-generate | x | | | | | x | |
-| starsolo | | | | | | x | |
-| featurecounts | x | x | x | | | | |
-| pigz | x | x | x | x | x | x | x |
-| trim-galore | x | x | x | | x | | |
+| Tool | rnaseq | chipseq | atacseq | sarek | methylseq | scrnaseq | viralrecon | ampliseq |
+|------|--------|---------|---------|-------|-----------|----------|------------|----------|
+| fastp | x | x | x | x | x | x | x | |
+| fastqc | x | x | x | x | x | x | x | x |
+| multiqc | x | x | x | x | x | x | x | x |
+| samtools-sort | x | x | x | x | x | | x | |
+| samtools-index | x | x | x | x | x | | x | |
+| picard-markduplicates | x | x | x | x | x | | | |
+| star-align | x | | | | | | | |
+| star-genome-generate | x | | | | | x | | |
+| starsolo | | | | | | x | | |
+| featurecounts | x | x | x | | | | | |
+| pigz | x | x | x | x | x | x | x | |
+| trim-galore | x | x | x | | x | | | |
 
 New shared tools added:
 - **bwa-mem2** (index + align) — chipseq ✓, atacseq, sarek, methylseq
@@ -359,6 +389,9 @@ New shared tools added:
 
 New tools added:
 - **starsolo** — scrnaseq ✓ (STARsolo barcode-aware alignment + count matrices)
+- **cutadapt** — ampliseq ✓ (5'-anchored primer trimming)
+- **dada2-denoise** — ampliseq ✓ (full DADA2 pipeline: filter → error learning → denoise → merge → chimera removal)
+- **dada2-assign-taxonomy** — ampliseq ✓ (naive Bayesian taxonomy assignment)
 
 New shared tools needed next:
 - **bedtools** — atacseq, sarek, viralrecon

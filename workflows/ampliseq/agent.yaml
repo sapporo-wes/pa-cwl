@@ -1,0 +1,152 @@
+workflow: ampliseq
+description: |
+  16S/ITS amplicon sequencing analysis pipeline using Cutadapt and DADA2.
+  Performs quality control, primer trimming, amplicon sequence variant (ASV)
+  inference, chimera removal, and taxonomy assignment. Supports paired-end
+  16S, ITS, and 18S amplicon data.
+
+use_cases:
+  - "Analyze 16S rRNA amplicon data for bacterial community profiling"
+  - "Process ITS amplicon sequencing for fungal diversity analysis"
+  - "Denoise amplicon reads and infer ASVs with DADA2"
+  - "Assign taxonomy to amplicon sequences using SILVA or UNITE databases"
+  - "Generate ASV count tables for downstream ecological analysis"
+
+inputs:
+  - id: fastq_fwd
+    type: "File[]"
+    description: "Forward read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: fastq_rev
+    type: "File[]"
+    description: "Reverse read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: sample_ids
+    type: "string[]"
+    description: "Sample identifiers (same order as FASTQ files)"
+    required: true
+
+  - id: primer_fwd
+    type: string
+    description: "Forward primer sequence"
+    required: true
+
+  - id: primer_rev
+    type: string
+    description: "Reverse primer sequence"
+    required: true
+
+  - id: taxonomy_db
+    type: File
+    description: "Taxonomy reference database FASTA (e.g., SILVA, UNITE)"
+    required: true
+    resolve_from:
+      - local_path
+      - https_url
+
+  - id: trunc_len_fwd
+    type: int
+    description: "Truncation length for forward reads (0 = no truncation)"
+    required: false
+    default: 0
+
+  - id: trunc_len_rev
+    type: int
+    description: "Truncation length for reverse reads (0 = no truncation)"
+    required: false
+    default: 0
+
+outputs:
+  - id: asv_counts
+    type: File
+    description: "ASV count table (samples x ASVs) in CSV format"
+
+  - id: asv_seqs
+    type: File
+    description: "Representative ASV sequences in FASTA format"
+
+  - id: taxonomy
+    type: File
+    description: "Taxonomy assignments CSV with lineage columns"
+
+  - id: tracking
+    type: File
+    description: "Read tracking through DADA2 pipeline stages"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report with FastQC and Cutadapt metrics"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for amplicon FASTQ files, sample IDs, and primer sequences"
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve FASTQ references to files"
+
+    - id: determine_parameters
+      action: ask_user
+      description: "Ask about target region (16S/ITS/18S), primer pair, and taxonomy database"
+
+    - id: select_truncation
+      action: ask_user
+      description: "Ask for truncation lengths based on quality profiles, or use 0 for auto"
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit ampliseq workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/ampliseq/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve ASV table, sequences, and taxonomy"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with ASV count summary and output links"
+
+hints: |
+  - Common primer pairs:
+    - 16S V4: 515F (GTGYCAGCMGCCGCGGTAA) / 806R (GGACTACNVGGGTWTCTAAT)
+    - 16S V3-V4: 341F (CCTACGGGNGGCWGCAG) / 805R (GACTACHVGGGTATCTAATCC)
+    - ITS: ITS1F (CTTGGTCATTTAGAGGAAGTAA) / ITS2 (GCTGCGTTCTTCATCGATGC)
+  - Reference databases:
+    - 16S: SILVA (https://zenodo.org/record/4587955) — use silva_nr99_v138.1_train_set.fa.gz
+    - ITS: UNITE (https://unite.ut.ee/repository.php) — use general FASTA release
+  - Truncation lengths: inspect FastQC quality plots; truncate where median Q drops below 20-25
+    - Typical 16S V4 2x250: truncLen_fwd=230, truncLen_rev=200
+    - Typical 16S V3-V4 2x300: truncLen_fwd=280, truncLen_rev=250
+    - Set to 0 for no truncation (suitable for short amplicons or ITS)
+  - DADA2 requires forward+reverse reads to overlap by at least 12bp after truncation
+  - Cutadapt discards reads where primers are not found (--discard-untrimmed)
+  - For single-end data, a separate workflow variant is needed (not yet supported)
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 8
+    min_cores: 4
+    estimated_storage_gb: 5
