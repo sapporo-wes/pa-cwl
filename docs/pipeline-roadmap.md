@@ -283,6 +283,39 @@ Viral genome variant calling and consensus generation using iVar. Supports ampli
 
 ---
 
+### mag — Metagenome-Assembled Genomes
+
+**Status: 1.0 — SPAdes + MetaBAT2 path tested (local, ARM Mac partial)**
+
+Metagenome assembly with SPAdes, contig binning with MetaBAT2, gene prediction with Prodigal.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FastQC | Done | |
+| fastp trimming | Done | |
+| SPAdes (metaSPAdes) assembly | Done | Co-assembly mode |
+| MEGAHIT assembly | Done (CWL) | Binary crashes on ARM Mac; works on x86 Linux |
+| QUAST assembly QC | Done | N50, total length, # contigs |
+| Bowtie2 read mapping | Done | Map reads back to contigs for coverage |
+| MetaBAT2 binning | Done (CWL) | jgi_summarize_bam_contig_depths + metabat2 |
+| Prodigal gene prediction | Done | Metagenome mode |
+| MultiQC | Done | Integrates FastQC, fastp, Bowtie2 |
+| Host read removal | Planned v1.1 | Bowtie2 against host reference |
+| MaxBin2 | Planned v1.1 | Alternative binner |
+| DAS Tool | Planned v1.1 | Bin refinement |
+| BUSCO | Planned v1.1 | Bin completeness assessment |
+| GTDB-Tk | Planned v1.1 | Bin taxonomic classification |
+| Prokka | Planned v1.1 | Bin functional annotation |
+
+**Tested pathway matrix:**
+
+| Mode | Local |
+|------|-------|
+| SPAdes + Bowtie2 + Prodigal (simulated, 3 genomes) | Pass |
+| MetaBAT2 binning (Docker) | Fail (x86 binary, ARM Mac) |
+
+---
+
 ## Conversion Targets
 
 Ranked by GitHub stars (proxy for community adoption). All are released/stable nf-core pipelines.
@@ -308,7 +341,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 
 | Pipeline | Stars | Domain | Description | Notes |
 |----------|-------|--------|-------------|-------|
-| **mag** | 279 | Metagenomics | Metagenome assembly, binning, annotation. megahit, metaSPAdes, MetaBAT2, GTDB-Tk. | Complex; many domain-specific tools |
+| ~~**mag**~~ | 279 | Metagenomics | **Done (1.0 SPAdes + MetaBAT2)** — see mag section above |  |
 | **taxprofiler** | 180 | Metagenomics | Multi-tool taxonomic profiling. Kraken2, Bracken, MetaPhlAn, Centrifuge, DIAMOND, mOTUs. | Many classifiers, large reference DBs |
 | **nanoseq** | 220 | Long-read | Nanopore QC, demux, alignment. minimap2, NanoPlot, pycoQC. | minimap2, nanopore-specific tools |
 | **rnafusion** | 172 | Transcriptomics | Gene fusion detection. STAR-Fusion, Arriba, FusionCatcher, pizzly. | Fusion-specific tools, large reference data |
@@ -350,7 +383,7 @@ Done                  Next up — shared tooling builds on previous
 ✓ scrnaseq (1.0)      + STARsolo (barcode-aware alignment + count matrices)
 ✓ viralrecon (1.0)    + ivar (trim, variants, consensus)
 ✓ ampliseq (1.0)      + cutadapt, DADA2 (R-based ASV inference + taxonomy)
-10. mag                + megahit, MetaBAT2, GTDB-Tk
+✓ mag (1.0)           + SPAdes, Bowtie2, MetaBAT2, Prodigal, QUAST
 11. taxprofiler        + Kraken2, MetaPhlAn, Centrifuge
 12. nanoseq            + minimap2, NanoPlot
 13. rnafusion          + STAR-Fusion, Arriba
@@ -365,20 +398,20 @@ Done                  Next up — shared tooling builds on previous
 
 Tools already in `tools/` that will be reused across pipelines:
 
-| Tool | rnaseq | chipseq | atacseq | sarek | methylseq | scrnaseq | viralrecon | ampliseq |
-|------|--------|---------|---------|-------|-----------|----------|------------|----------|
-| fastp | x | x | x | x | x | x | x | |
-| fastqc | x | x | x | x | x | x | x | x |
-| multiqc | x | x | x | x | x | x | x | x |
-| samtools-sort | x | x | x | x | x | | x | |
-| samtools-index | x | x | x | x | x | | x | |
-| picard-markduplicates | x | x | x | x | x | | | |
-| star-align | x | | | | | | | |
-| star-genome-generate | x | | | | | x | | |
-| starsolo | | | | | | x | | |
-| featurecounts | x | x | x | | | | | |
-| pigz | x | x | x | x | x | x | x | |
-| trim-galore | x | x | x | | x | | | |
+| Tool | rnaseq | chipseq | atacseq | sarek | methylseq | scrnaseq | viralrecon | ampliseq | mag |
+|------|--------|---------|---------|-------|-----------|----------|------------|----------|-----|
+| fastp | x | x | x | x | x | x | x | | x |
+| fastqc | x | x | x | x | x | x | x | x | x |
+| multiqc | x | x | x | x | x | x | x | x | x |
+| samtools-sort | x | x | x | x | x | | x | | |
+| samtools-index | x | x | x | x | x | | x | | |
+| picard-markduplicates | x | x | x | x | x | | | | |
+| star-align | x | | | | | | | | |
+| star-genome-generate | x | | | | | x | | | |
+| starsolo | | | | | | x | | | |
+| featurecounts | x | x | x | | | | | | |
+| pigz | x | x | x | x | x | x | x | | |
+| trim-galore | x | x | x | | x | | | | |
 
 New shared tools added:
 - **bwa-mem2** (index + align) — chipseq ✓, atacseq, sarek, methylseq
@@ -392,6 +425,13 @@ New tools added:
 - **cutadapt** — ampliseq ✓ (5'-anchored primer trimming)
 - **dada2-denoise** — ampliseq ✓ (full DADA2 pipeline: filter → error learning → denoise → merge → chimera removal)
 - **dada2-assign-taxonomy** — ampliseq ✓ (naive Bayesian taxonomy assignment)
+- **megahit** — mag ✓ (de novo metagenome assembly)
+- **spades** — mag ✓ (metaSPAdes metagenome assembly)
+- **bowtie2-build** — mag ✓ (build Bowtie2 index)
+- **bowtie2-align** — mag ✓ (short read alignment with sorted BAM output)
+- **metabat2** — mag ✓ (depth calculation + metagenome binning)
+- **prodigal** — mag ✓ (prokaryotic gene prediction)
+- **quast** — mag ✓ (assembly quality assessment)
 
 New shared tools needed next:
 - **bedtools** — atacseq, sarek, viralrecon

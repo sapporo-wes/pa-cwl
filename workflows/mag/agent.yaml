@@ -1,0 +1,122 @@
+workflow: mag
+description: |
+  Metagenome-Assembled Genomes (MAG) pipeline. Performs QC, trimming,
+  metagenome assembly with SPAdes (metaSPAdes), read mapping, contig
+  binning with MetaBAT2, gene prediction with Prodigal, and assembly
+  quality assessment with QUAST.
+
+use_cases:
+  - "Assemble metagenome reads into contigs and genome bins"
+  - "Recover microbial genomes from environmental sequencing data"
+  - "Predict genes in metagenome assemblies"
+  - "Assess metagenome assembly quality metrics"
+
+inputs:
+  - id: fastq_fwd
+    type: "File[]"
+    description: "Forward read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: fastq_rev
+    type: "File[]"
+    description: "Reverse read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: sample_ids
+    type: "string[]"
+    description: "Sample identifiers (same order as FASTQ files)"
+    required: true
+
+  - id: min_contig_len
+    type: int
+    description: "Minimum contig length for assembly and binning"
+    required: false
+    default: 1000
+
+outputs:
+  - id: contigs
+    type: File
+    description: "Assembled metagenome contigs FASTA"
+
+  - id: bins
+    type: "File[]"
+    description: "Genome bin FASTA files"
+
+  - id: bin_summary
+    type: File
+    description: "Bin summary statistics (contigs, total length)"
+
+  - id: gene_annotations
+    type: File
+    description: "Predicted gene annotations (GFF)"
+
+  - id: protein_sequences
+    type: File
+    description: "Predicted protein sequences (FAA)"
+
+  - id: quast_report
+    type: File
+    description: "Assembly quality statistics (TSV)"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for metagenomic FASTQ files and sample IDs"
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve FASTQ references to files"
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit mag workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/mag/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve assembly, bins, and gene predictions"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with assembly stats and bin summary"
+
+hints: |
+  - Assembly: metaSPAdes mode for metagenome data
+  - Binning: MetaBAT2 uses tetranucleotide frequency + coverage for binning
+  - Multi-sample co-assembly: provide all sample FASTQs together
+  - MetaBAT2 works best with multiple samples (differential coverage)
+  - Minimum contig length for binning: 1500bp (MetaBAT2 default)
+  - For assembly QC: check N50, total length, # contigs in QUAST report
+  - Planned v1.1: MEGAHIT assembler option, MaxBin2, BUSCO, GTDB-Tk, Prokka
+  - Planned v1.1: Host read removal with Bowtie2 against host reference
+  - Planned v1.1: Bin refinement with DAS Tool
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 16
+    min_cores: 8
+    estimated_storage_gb: 20

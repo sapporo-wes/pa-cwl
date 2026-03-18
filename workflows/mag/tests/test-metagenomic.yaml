@@ -1,0 +1,15 @@
+# Test: Metagenome assembly and binning
+
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/metagenome/sample1_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: ../../../test-data/metagenome/sample1_R2.fastq.gz
+
+sample_ids:
+  - sample1
+
+# Lower min contig for small test genomes
+min_contig_len: 500
