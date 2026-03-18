@@ -1,0 +1,19 @@
+# Test: Taxonomic profiling with Kraken2 + Bracken
+
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/taxonomic/sample1_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: ../../../test-data/taxonomic/sample1_R2.fastq.gz
+
+sample_ids:
+  - sample1
+
+kraken2_db:
+  class: Directory
+  path: ../../../test-data/taxonomic/kraken2_viral
+
+bracken_read_length: 150
+bracken_level: S

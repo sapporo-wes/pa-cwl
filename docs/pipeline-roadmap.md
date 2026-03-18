@@ -316,6 +316,32 @@ Metagenome assembly with SPAdes, contig binning with MetaBAT2, gene prediction w
 
 ---
 
+### taxprofiler — Taxonomic Profiling
+
+**Status: 1.0 — Kraken2 + Bracken path tested**
+
+Taxonomic classification with Kraken2 and abundance re-estimation with Bracken.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FastQC | Done | |
+| fastp trimming | Done | |
+| Kraken2 classification | Done | k-mer based, paired-end support |
+| Bracken abundance | Done | Bayesian re-estimation from Kraken2 reports |
+| MultiQC | Done | Integrates FastQC, fastp, Kraken2 |
+| MetaPhlAn | Planned v1.1 | Marker-gene based profiling |
+| Centrifuge | Planned v1.1 | FM-index based classification |
+| Krona visualization | Planned v1.1 | Interactive taxonomy plots |
+| Taxpasta | Planned v1.1 | Standardized output format |
+
+**Tested pathway matrix:**
+
+| Mode | Local |
+|------|-------|
+| Kraken2 + Bracken (viral DB, simulated reads) | Pass |
+
+---
+
 ## Conversion Targets
 
 Ranked by GitHub stars (proxy for community adoption). All are released/stable nf-core pipelines.
@@ -342,7 +368,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 | Pipeline | Stars | Domain | Description | Notes |
 |----------|-------|--------|-------------|-------|
 | ~~**mag**~~ | 279 | Metagenomics | **Done (1.0 SPAdes + MetaBAT2)** — see mag section above |  |
-| **taxprofiler** | 180 | Metagenomics | Multi-tool taxonomic profiling. Kraken2, Bracken, MetaPhlAn, Centrifuge, DIAMOND, mOTUs. | Many classifiers, large reference DBs |
+| ~~**taxprofiler**~~ | 180 | Metagenomics | **Done (1.0 Kraken2 + Bracken)** — see taxprofiler section above |  |
 | **nanoseq** | 220 | Long-read | Nanopore QC, demux, alignment. minimap2, NanoPlot, pycoQC. | minimap2, nanopore-specific tools |
 | **rnafusion** | 172 | Transcriptomics | Gene fusion detection. STAR-Fusion, Arriba, FusionCatcher, pizzly. | Fusion-specific tools, large reference data |
 
@@ -384,7 +410,7 @@ Done                  Next up — shared tooling builds on previous
 ✓ viralrecon (1.0)    + ivar (trim, variants, consensus)
 ✓ ampliseq (1.0)      + cutadapt, DADA2 (R-based ASV inference + taxonomy)
 ✓ mag (1.0)           + SPAdes, Bowtie2, MetaBAT2, Prodigal, QUAST
-11. taxprofiler        + Kraken2, MetaPhlAn, Centrifuge
+✓ taxprofiler (1.0)   + Kraken2, Bracken
 12. nanoseq            + minimap2, NanoPlot
 13. rnafusion          + STAR-Fusion, Arriba
 14. raredisease        sarek + annotation extensions
@@ -398,11 +424,11 @@ Done                  Next up — shared tooling builds on previous
 
 Tools already in `tools/` that will be reused across pipelines:
 
-| Tool | rnaseq | chipseq | atacseq | sarek | methylseq | scrnaseq | viralrecon | ampliseq | mag |
-|------|--------|---------|---------|-------|-----------|----------|------------|----------|-----|
-| fastp | x | x | x | x | x | x | x | | x |
-| fastqc | x | x | x | x | x | x | x | x | x |
-| multiqc | x | x | x | x | x | x | x | x | x |
+| Tool | rnaseq | chipseq | atacseq | sarek | methylseq | scrnaseq | viralrecon | ampliseq | mag | taxprofiler |
+|------|--------|---------|---------|-------|-----------|----------|------------|----------|-----|-------------|
+| fastp | x | x | x | x | x | x | x | | x | x |
+| fastqc | x | x | x | x | x | x | x | x | x | x |
+| multiqc | x | x | x | x | x | x | x | x | x | x |
 | samtools-sort | x | x | x | x | x | | x | | |
 | samtools-index | x | x | x | x | x | | x | | |
 | picard-markduplicates | x | x | x | x | x | | | | |
@@ -432,6 +458,8 @@ New tools added:
 - **metabat2** — mag ✓ (depth calculation + metagenome binning)
 - **prodigal** — mag ✓ (prokaryotic gene prediction)
 - **quast** — mag ✓ (assembly quality assessment)
+- **kraken2** — taxprofiler ✓ (k-mer taxonomic classification)
+- **bracken** — taxprofiler ✓ (Bayesian abundance re-estimation)
 
 New shared tools needed next:
 - **bedtools** — atacseq, sarek, viralrecon

@@ -24,3 +24,7 @@ test-results/
 # Temporary files
 tmp/
 *.tmp
+
+# Large reference databases (download separately)
+test-data/taxonomic/kraken2_viral/
+test-data/taxonomic/kraken2_testdb/

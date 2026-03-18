@@ -1,0 +1,29 @@
+# Paired-end taxonomic profiling with Kraken2 + Bracken
+
+fastq_fwd:
+  - class: File
+    path: /path/to/sample1_R1.fastq.gz
+  - class: File
+    path: /path/to/sample2_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: /path/to/sample1_R2.fastq.gz
+  - class: File
+    path: /path/to/sample2_R2.fastq.gz
+
+sample_ids:
+  - sample1
+  - sample2
+
+# Pre-built Kraken2/Bracken database
+# Download from https://benlangmead.github.io/aws-indexes/k2
+kraken2_db:
+  class: Directory
+  path: /path/to/kraken2_standard_db
+
+# Must match a kmer length in the database (50,75,100,150,200,250,300)
+bracken_read_length: 150
+
+# Taxonomic level: D=domain, P=phylum, C=class, O=order, F=family, G=genus, S=species
+bracken_level: S

@@ -1,0 +1,127 @@
+workflow: taxprofiler
+description: |
+  Taxonomic profiling pipeline for metagenomic data. Uses Kraken2 for
+  k-mer based taxonomic classification and Bracken for Bayesian abundance
+  re-estimation. Includes FastQC, fastp trimming, and MultiQC reporting.
+
+use_cases:
+  - "Profile taxonomic composition of metagenomic samples"
+  - "Classify metagenomic reads against reference databases"
+  - "Estimate species-level abundance from shotgun metagenomics"
+  - "Screen clinical samples for pathogen detection"
+
+inputs:
+  - id: fastq_fwd
+    type: "File[]"
+    description: "Forward read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: fastq_rev
+    type: "File[]"
+    description: "Reverse read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: sample_ids
+    type: "string[]"
+    description: "Sample identifiers (same order as FASTQ files)"
+    required: true
+
+  - id: kraken2_db
+    type: Directory
+    description: "Pre-built Kraken2/Bracken database directory"
+    required: true
+    resolve_from:
+      - local_path
+      - https_url
+
+  - id: bracken_read_length
+    type: int
+    description: "Read length for Bracken (must match DB build: 50,75,100,150,200,250,300)"
+    required: false
+    default: 150
+
+  - id: bracken_level
+    type: string
+    description: "Taxonomic level for Bracken abundance"
+    required: false
+    default: S
+    options: [D, P, C, O, F, G, S]
+
+outputs:
+  - id: kraken2_reports
+    type: "File[]"
+    description: "Kraken2 classification reports per sample"
+
+  - id: bracken_abundances
+    type: "File[]"
+    description: "Bracken abundance estimates per sample"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for metagenomic FASTQ files and sample IDs"
+
+    - id: select_database
+      action: ask_user
+      description: "Ask which Kraken2 database to use or provide path"
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve FASTQ and database references"
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit taxprofiler workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/taxprofiler/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve Kraken2 reports and Bracken abundances"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with top taxa and abundance summary"
+
+hints: |
+  - Pre-built Kraken2/Bracken databases: https://benlangmead.github.io/aws-indexes/k2
+  - Common databases:
+    - Standard: bacteria, archaea, viral, human (~60GB)
+    - PlusPF: + protozoa, fungi (~70GB)
+    - Viral: RefSeq viral only (~0.5GB, good for pathogen screening)
+    - Standard-8/16: capped at 8GB/16GB for memory-limited environments
+  - The database must include Bracken kmer distributions (database*mers.kmer_distrib)
+  - bracken_read_length must match one of the built kmer lengths in the database
+  - Bracken levels: D=domain, P=phylum, C=class, O=order, F=family, G=genus, S=species
+  - For human microbiome: use Standard or PlusPF databases
+  - For clinical pathogen screening: Viral database is fastest
+  - Planned v1.1: MetaPhlAn, Centrifuge, Krona visualization, Taxpasta standardized output
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 16
+    min_cores: 8
+    estimated_storage_gb: 100
