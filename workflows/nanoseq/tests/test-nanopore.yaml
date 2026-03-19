@@ -1,0 +1,14 @@
+# Test: Nanopore DNA alignment with minimap2
+
+fastq:
+  - class: File
+    path: ../../../test-data/nanopore/sample1_nanopore.fastq.gz
+
+sample_ids:
+  - sample1
+
+reference:
+  class: File
+  path: ../../../test-data/nanopore/reference.fasta
+
+minimap2_preset: map-ont

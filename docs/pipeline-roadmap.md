@@ -342,6 +342,33 @@ Taxonomic classification with Kraken2 and abundance re-estimation with Bracken.
 
 ---
 
+### nanoseq — Nanopore Long-Read Sequencing
+
+**Status: 1.0 — minimap2 alignment + NanoPlot QC tested**
+
+Nanopore long-read sequencing analysis with NanoPlot QC, minimap2 alignment, and MultiQC reporting.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| NanoPlot QC | Done | Read length distributions, quality scores |
+| FastQC | Done | General QC |
+| minimap2 alignment | Done | map-ont (DNA), splice (RNA) presets |
+| samtools sort/index | Done | |
+| samtools stats | Done | Alignment statistics for MultiQC |
+| MultiQC | Done | Integrates NanoStat, FastQC, samtools |
+| NanoFilt quality filtering | Planned v1.1 | |
+| StringTie2 transcript assembly | Planned v1.1 | For RNA mode |
+| Variant calling (medaka) | Planned v1.1 | Short variants from Nanopore reads |
+| Structural variants (sniffles) | Planned v1.1 | |
+
+**Tested pathway matrix:**
+
+| Mode | Local |
+|------|-------|
+| DNA (map-ont, simulated 500 reads) | Pass |
+
+---
+
 ## Conversion Targets
 
 Ranked by GitHub stars (proxy for community adoption). All are released/stable nf-core pipelines.
@@ -369,7 +396,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 |----------|-------|--------|-------------|-------|
 | ~~**mag**~~ | 279 | Metagenomics | **Done (1.0 SPAdes + MetaBAT2)** — see mag section above |  |
 | ~~**taxprofiler**~~ | 180 | Metagenomics | **Done (1.0 Kraken2 + Bracken)** — see taxprofiler section above |  |
-| **nanoseq** | 220 | Long-read | Nanopore QC, demux, alignment. minimap2, NanoPlot, pycoQC. | minimap2, nanopore-specific tools |
+| ~~**nanoseq**~~ | 220 | Long-read | **Done (1.0 minimap2 + NanoPlot)** — see nanoseq section above |  |
 | **rnafusion** | 172 | Transcriptomics | Gene fusion detection. STAR-Fusion, Arriba, FusionCatcher, pizzly. | Fusion-specific tools, large reference data |
 
 ### Tier 4 — Niche but valuable
@@ -411,11 +438,11 @@ Done                  Next up — shared tooling builds on previous
 ✓ ampliseq (1.0)      + cutadapt, DADA2 (R-based ASV inference + taxonomy)
 ✓ mag (1.0)           + SPAdes, Bowtie2, MetaBAT2, Prodigal, QUAST
 ✓ taxprofiler (1.0)   + Kraken2, Bracken
-12. nanoseq            + minimap2, NanoPlot
-13. rnafusion          + STAR-Fusion, Arriba
-14. raredisease        sarek + annotation extensions
-15. cutandrun          chipseq + spike-in normalization
-16. hic                new stack (HiCUP, cooler)
+✓ nanoseq (1.0)       + minimap2, NanoPlot
+13. rnafusion           + STAR-Fusion, Arriba
+14. raredisease         sarek + annotation extensions
+15. cutandrun           chipseq + spike-in normalization
+16. hic                 new stack (HiCUP, cooler)
 ```
 
 ---
@@ -424,20 +451,21 @@ Done                  Next up — shared tooling builds on previous
 
 Tools already in `tools/` that will be reused across pipelines:
 
-| Tool | rnaseq | chipseq | atacseq | sarek | methylseq | scrnaseq | viralrecon | ampliseq | mag | taxprofiler |
-|------|--------|---------|---------|-------|-----------|----------|------------|----------|-----|-------------|
-| fastp | x | x | x | x | x | x | x | | x | x |
-| fastqc | x | x | x | x | x | x | x | x | x | x |
-| multiqc | x | x | x | x | x | x | x | x | x | x |
-| samtools-sort | x | x | x | x | x | | x | | |
-| samtools-index | x | x | x | x | x | | x | | |
-| picard-markduplicates | x | x | x | x | x | | | | |
-| star-align | x | | | | | | | | |
-| star-genome-generate | x | | | | | x | | | |
-| starsolo | | | | | | x | | | |
-| featurecounts | x | x | x | | | | | | |
-| pigz | x | x | x | x | x | x | x | | |
-| trim-galore | x | x | x | | x | | | | |
+| Tool | rnaseq | chipseq | atacseq | sarek | methylseq | scrnaseq | viralrecon | ampliseq | mag | taxprofiler | nanoseq |
+|------|--------|---------|---------|-------|-----------|----------|------------|----------|-----|-------------|---------|
+| fastp | x | x | x | x | x | x | x | | x | x | |
+| fastqc | x | x | x | x | x | x | x | x | x | x | x |
+| multiqc | x | x | x | x | x | x | x | x | x | x | x |
+| samtools-sort | x | x | x | x | x | | x | | | | x |
+| samtools-index | x | x | x | x | x | | x | | | | x |
+| samtools-stats | | | | x | | | x | | | | x |
+| picard-markduplicates | x | x | x | x | x | | | | | | |
+| star-align | x | | | | | | | | | | |
+| star-genome-generate | x | | | | | x | | | | | |
+| starsolo | | | | | | x | | | | | |
+| featurecounts | x | x | x | | | | | | | | |
+| pigz | x | x | x | x | x | x | x | | | | |
+| trim-galore | x | x | x | | x | | | | | | |
 
 New shared tools added:
 - **bwa-mem2** (index + align) — chipseq ✓, atacseq, sarek, methylseq
@@ -460,6 +488,8 @@ New tools added:
 - **quast** — mag ✓ (assembly quality assessment)
 - **kraken2** — taxprofiler ✓ (k-mer taxonomic classification)
 - **bracken** — taxprofiler ✓ (Bayesian abundance re-estimation)
+- **minimap2** — nanoseq ✓ (long-read alignment, Nanopore/PacBio)
+- **nanoplot** — nanoseq ✓ (Nanopore QC: read length, quality, throughput)
 
 New shared tools needed next:
 - **bedtools** — atacseq, sarek, viralrecon

@@ -1,0 +1,18 @@
+# Nanopore DNA sequencing alignment
+
+fastq:
+  - class: File
+    path: /path/to/sample1.fastq.gz
+  - class: File
+    path: /path/to/sample2.fastq.gz
+
+sample_ids:
+  - sample1
+  - sample2
+
+reference:
+  class: File
+  path: /path/to/reference.fasta
+
+# Preset: map-ont (DNA), splice (RNA), map-pb (PacBio CLR), map-hifi
+minimap2_preset: map-ont

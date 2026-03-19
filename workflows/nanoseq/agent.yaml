@@ -1,0 +1,114 @@
+workflow: nanoseq
+description: |
+  Nanopore long-read sequencing analysis pipeline. QC with NanoPlot,
+  alignment with minimap2, and aggregated reporting with MultiQC.
+  Supports DNA (map-ont) and RNA (splice) presets.
+
+use_cases:
+  - "Align Nanopore reads to a reference genome"
+  - "QC long-read sequencing data"
+  - "Process Oxford Nanopore DNA or cDNA sequencing"
+  - "Generate alignment statistics for Nanopore runs"
+
+inputs:
+  - id: fastq
+    type: "File[]"
+    description: "Nanopore FASTQ files (one per sample, gzipped supported)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: sample_ids
+    type: "string[]"
+    description: "Sample identifiers (same order as FASTQ files)"
+    required: true
+
+  - id: reference
+    type: File
+    description: "Reference genome FASTA file"
+    required: true
+    resolve_from:
+      - local_path
+      - https_url
+
+  - id: minimap2_preset
+    type: string
+    description: "minimap2 alignment preset"
+    required: false
+    default: map-ont
+    options: [map-ont, splice, map-pb, map-hifi, lr:hq]
+
+outputs:
+  - id: sorted_bams
+    type: "File[]"
+    description: "Coordinate-sorted BAM files with index"
+
+  - id: nanoplot_reports
+    type: "File[]"
+    description: "NanoPlot HTML QC reports per sample"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for Nanopore FASTQ files and sample IDs"
+
+    - id: collect_reference
+      action: ask_user
+      description: "Ask for reference genome FASTA"
+
+    - id: select_preset
+      action: ask_user
+      description: "Ask for sequencing protocol (DNA/RNA) to set minimap2 preset"
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve FASTQ and reference paths"
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit nanoseq workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/nanoseq/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve BAMs, NanoPlot reports, and MultiQC report"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with alignment rates and QC summary"
+
+hints: |
+  - minimap2 presets:
+    - map-ont: Oxford Nanopore reads (default)
+    - splice: Direct RNA or cDNA (uses spliced alignment)
+    - map-pb: PacBio CLR reads
+    - map-hifi: PacBio HiFi reads
+    - lr:hq: Long reads with >99% accuracy (R10.4.1, HiFi)
+  - NanoPlot generates read length distributions, quality scores, and throughput plots
+  - For RNA-seq: use splice preset and provide a genome reference (not transcriptome)
+  - Planned v1.1: NanoFilt quality filtering, StringTie2 transcript assembly, bedmethyl for methylation
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 8
+    min_cores: 4
+    estimated_storage_gb: 50
