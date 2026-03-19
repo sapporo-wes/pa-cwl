@@ -1,0 +1,150 @@
+workflow: rnafusion
+description: |
+  Gene fusion detection pipeline from RNA-seq data. Uses STAR alignment with
+  chimeric detection and Arriba for fusion calling. Includes FastQC, fastp
+  trimming, and MultiQC reporting.
+
+use_cases:
+  - "Detect gene fusions from RNA-seq data"
+  - "Screen cancer samples for fusion transcripts"
+  - "Identify chimeric transcripts from paired-end RNA-seq"
+  - "Validate known fusion events in tumor samples"
+
+inputs:
+  - id: fastq_fwd
+    type: "File[]"
+    description: "Forward read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: fastq_rev
+    type: "File[]"
+    description: "Reverse read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: sample_ids
+    type: "string[]"
+    description: "Sample identifiers (same order as FASTQ files)"
+    required: true
+
+  - id: star_index
+    type: Directory
+    description: "STAR genome index directory (built with --sjdbGTFfile)"
+    required: true
+    resolve_from:
+      - local_path
+
+  - id: reference_fasta
+    type: File
+    description: "Reference genome FASTA file"
+    required: true
+    resolve_from:
+      - local_path
+      - https_url
+
+  - id: gtf
+    type: File
+    description: "Gene annotation GTF file (Gencode recommended)"
+    required: true
+    resolve_from:
+      - local_path
+      - https_url
+
+  - id: arriba_blacklist
+    type: File
+    description: "Arriba blacklist of recurrent artifacts"
+    required: false
+    resolve_from:
+      - local_path
+
+  - id: arriba_known_fusions
+    type: File
+    description: "Arriba known fusions for boosting sensitivity"
+    required: false
+    resolve_from:
+      - local_path
+
+  - id: arriba_protein_domains
+    type: File
+    description: "Arriba protein domain annotation (GFF3)"
+    required: false
+    resolve_from:
+      - local_path
+
+outputs:
+  - id: fusions
+    type: "File[]"
+    description: "Arriba gene fusion calls per sample"
+
+  - id: aligned_bams
+    type: "File[]"
+    description: "STAR-aligned BAMs with chimeric reads"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for RNA-seq FASTQ files and sample IDs"
+
+    - id: collect_reference
+      action: ask_user
+      description: "Ask for STAR index, genome FASTA, and GTF annotation"
+
+    - id: collect_databases
+      action: ask_user
+      description: "Ask for optional Arriba databases (blacklist, known fusions)"
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve FASTQ and reference paths"
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit rnafusion workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/rnafusion/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve fusion calls and BAMs"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with detected fusions summary"
+
+hints: |
+  - Arriba databases: download from https://github.com/suhrig/arriba/releases
+  - Blacklist: filters recurrent artifacts and read-through fusions
+  - Known fusions: boosts sensitivity for validated events (e.g., COSMIC)
+  - Without blacklist: use -f blacklist to disable (more false positives)
+  - Reference: GRCh38 recommended; Arriba databases are genome-build specific
+  - STAR index must be built with --sjdbGTFfile for splice junction detection
+  - Paired-end reads strongly recommended for fusion detection
+  - Planned v1.1: STAR-Fusion, FusionCatcher, FusionInspector, Arriba visualization
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 32
+    min_cores: 8
+    estimated_storage_gb: 100

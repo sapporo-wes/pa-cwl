@@ -25,6 +25,7 @@ test-results/
 tmp/
 *.tmp
 
-# Large reference databases (download separately)
+# Large reference databases and indices (download/build separately)
 test-data/taxonomic/kraken2_viral/
 test-data/taxonomic/kraken2_testdb/
+test-data/fusion/star_index/

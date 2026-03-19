@@ -1,0 +1,26 @@
+# Test: Gene fusion detection with STAR + Arriba
+
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/fusion/sample1_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: ../../../test-data/fusion/sample1_R2.fastq.gz
+
+sample_ids:
+  - sample1
+
+star_index:
+  class: Directory
+  path: ../../../test-data/fusion/star_index
+
+reference_fasta:
+  class: File
+  path: ../../../test-data/fusion/reference.fasta
+
+gtf:
+  class: File
+  path: ../../../test-data/fusion/annotation.gtf
+
+# No blacklist/known_fusions/protein_domains for test

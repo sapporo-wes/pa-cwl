@@ -369,6 +369,33 @@ Nanopore long-read sequencing analysis with NanoPlot QC, minimap2 alignment, and
 
 ---
 
+### rnafusion — Gene Fusion Detection
+
+**Status: 1.0 — Arriba path tested (Docker)**
+
+Gene fusion detection from RNA-seq data using STAR chimeric alignment and Arriba.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FastQC | Done | |
+| fastp trimming | Done | |
+| STAR alignment (chimeric mode) | Done | chimSegmentMin, chimOutType WithinBAM |
+| Arriba fusion detection | Done | Blacklist auto-disabled when not provided |
+| samtools index | Done | |
+| MultiQC | Done | Integrates FastQC, fastp, STAR |
+| STAR-Fusion | Planned v1.1 | CTAT resource bundle required |
+| FusionCatcher | Planned v1.1 | |
+| FusionInspector | Planned v1.1 | Post-processing validation |
+| Arriba visualization | Planned v1.1 | draw_fusions.R |
+
+**Tested pathway matrix:**
+
+| Mode | Docker |
+|------|--------|
+| Arriba (simulated GENEA-GENEB fusion, 499 reads) | Pass |
+
+---
+
 ## Conversion Targets
 
 Ranked by GitHub stars (proxy for community adoption). All are released/stable nf-core pipelines.
@@ -397,7 +424,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 | ~~**mag**~~ | 279 | Metagenomics | **Done (1.0 SPAdes + MetaBAT2)** — see mag section above |  |
 | ~~**taxprofiler**~~ | 180 | Metagenomics | **Done (1.0 Kraken2 + Bracken)** — see taxprofiler section above |  |
 | ~~**nanoseq**~~ | 220 | Long-read | **Done (1.0 minimap2 + NanoPlot)** — see nanoseq section above |  |
-| **rnafusion** | 172 | Transcriptomics | Gene fusion detection. STAR-Fusion, Arriba, FusionCatcher, pizzly. | Fusion-specific tools, large reference data |
+| ~~**rnafusion**~~ | 172 | Transcriptomics | **Done (1.0 Arriba)** — see rnafusion section above |  |
 
 ### Tier 4 — Niche but valuable
 
@@ -439,7 +466,7 @@ Done                  Next up — shared tooling builds on previous
 ✓ mag (1.0)           + SPAdes, Bowtie2, MetaBAT2, Prodigal, QUAST
 ✓ taxprofiler (1.0)   + Kraken2, Bracken
 ✓ nanoseq (1.0)       + minimap2, NanoPlot
-13. rnafusion           + STAR-Fusion, Arriba
+✓ rnafusion (1.0)     + Arriba, STAR chimeric mode
 14. raredisease         sarek + annotation extensions
 15. cutandrun           chipseq + spike-in normalization
 16. hic                 new stack (HiCUP, cooler)
@@ -490,6 +517,8 @@ New tools added:
 - **bracken** — taxprofiler ✓ (Bayesian abundance re-estimation)
 - **minimap2** — nanoseq ✓ (long-read alignment, Nanopore/PacBio)
 - **nanoplot** — nanoseq ✓ (Nanopore QC: read length, quality, throughput)
+- **star-align-fusion** — rnafusion ✓ (STAR with chimeric detection for fusion calling)
+- **arriba** — rnafusion ✓ (gene fusion detection from STAR chimeric alignments)
 
 New shared tools needed next:
 - **bedtools** — atacseq, sarek, viralrecon

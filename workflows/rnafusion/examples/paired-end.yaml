@@ -1,0 +1,44 @@
+# Gene fusion detection from paired-end RNA-seq
+
+fastq_fwd:
+  - class: File
+    path: /path/to/sample1_R1.fastq.gz
+  - class: File
+    path: /path/to/sample2_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: /path/to/sample1_R2.fastq.gz
+  - class: File
+    path: /path/to/sample2_R2.fastq.gz
+
+sample_ids:
+  - sample1
+  - sample2
+
+# STAR genome index (built with --sjdbGTFfile)
+star_index:
+  class: Directory
+  path: /path/to/star_index
+
+reference_fasta:
+  class: File
+  path: /path/to/GRCh38.primary_assembly.genome.fa
+
+gtf:
+  class: File
+  path: /path/to/gencode.v44.annotation.gtf
+
+# Optional Arriba databases (strongly recommended for production)
+# Download from: https://github.com/suhrig/arriba/releases
+arriba_blacklist:
+  class: File
+  path: /path/to/arriba_v2.5.1/database/blacklist_hg38_GRCh38_v2.5.1.tsv.gz
+
+arriba_known_fusions:
+  class: File
+  path: /path/to/arriba_v2.5.1/database/known_fusions_hg38_GRCh38_v2.5.1.tsv.gz
+
+arriba_protein_domains:
+  class: File
+  path: /path/to/arriba_v2.5.1/database/protein_domains_hg38_GRCh38_v2.5.1.gff3

@@ -1,0 +1,15 @@
+chr1	sim	gene	101	1100	.	+	.	gene_id "GENEA"; gene_name "GENEA";
+chr1	sim	transcript	101	1100	.	+	.	gene_id "GENEA"; transcript_id "GENEA_t1"; gene_name "GENEA";
+chr1	sim	exon	101	400	.	+	.	gene_id "GENEA"; transcript_id "GENEA_t1"; exon_number "1"; gene_name "GENEA";
+chr1	sim	exon	501	800	.	+	.	gene_id "GENEA"; transcript_id "GENEA_t1"; exon_number "2"; gene_name "GENEA";
+chr1	sim	exon	901	1100	.	+	.	gene_id "GENEA"; transcript_id "GENEA_t1"; exon_number "3"; gene_name "GENEA";
+chr2	sim	gene	201	1200	.	+	.	gene_id "GENEB"; gene_name "GENEB";
+chr2	sim	transcript	201	1200	.	+	.	gene_id "GENEB"; transcript_id "GENEB_t1"; gene_name "GENEB";
+chr2	sim	exon	201	500	.	+	.	gene_id "GENEB"; transcript_id "GENEB_t1"; exon_number "1"; gene_name "GENEB";
+chr2	sim	exon	601	900	.	+	.	gene_id "GENEB"; transcript_id "GENEB_t1"; exon_number "2"; gene_name "GENEB";
+chr2	sim	exon	1001	1200	.	+	.	gene_id "GENEB"; transcript_id "GENEB_t1"; exon_number "3"; gene_name "GENEB";
+chr1	sim	gene	2001	3000	.	-	.	gene_id "GENEC"; gene_name "GENEC";
+chr1	sim	transcript	2001	3000	.	-	.	gene_id "GENEC"; transcript_id "GENEC_t1"; gene_name "GENEC";
+chr1	sim	exon	2001	2400	.	-	.	gene_id "GENEC"; transcript_id "GENEC_t1"; exon_number "1"; gene_name "GENEC";
+chr1	sim	exon	2501	2800	.	-	.	gene_id "GENEC"; transcript_id "GENEC_t1"; exon_number "2"; gene_name "GENEC";
+chr1	sim	exon	2901	3000	.	-	.	gene_id "GENEC"; transcript_id "GENEC_t1"; exon_number "3"; gene_name "GENEC";
