@@ -458,6 +458,35 @@ CUT&RUN and CUT&TAG analysis with Bowtie2 alignment, MACS2 peak calling (--nomod
 
 ---
 
+### hic — Hi-C Chromatin Conformation Capture
+
+**Status: 1.0 — MboI/DpnII protocol tested (Docker)**
+
+Hi-C chromatin interaction analysis with two-step Bowtie2 alignment, pairtools valid pair extraction and deduplication, and cooler contact map generation with ICE normalization.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FastQC | Done | |
+| fastp trimming | Done | |
+| Two-step Bowtie2 mapping | Done | Chimeric read rescue at ligation junctions |
+| SAM flag tagging | Done | Paired-end flags for pairtools compatibility |
+| pairtools parse | Done | Valid pair extraction from name-sorted BAM |
+| pairtools sort + dedup | Done | Duplicate removal with statistics |
+| cooler cload | Done | Contact matrix at specified resolution |
+| cooler zoomify | Done | Multi-resolution .mcool with ICE balancing |
+| MultiQC | Done | Integrates FastQC, fastp, Bowtie2 logs |
+| TAD calling (HiCExplorer) | Planned v1.1 | |
+| A/B compartments (cooltools) | Planned v1.1 | |
+| Juicer .hic conversion | Planned v1.1 | |
+
+**Tested pathway matrix:**
+
+| Mode | Docker |
+|------|--------|
+| MboI/DpnII (simulated 500 reads, 3 chromosomes) | Pass |
+
+---
+
 ## Conversion Targets
 
 Ranked by GitHub stars (proxy for community adoption). All are released/stable nf-core pipelines.
@@ -494,7 +523,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 |----------|-------|--------|-------------|-------|
 | ~~**raredisease**~~ | 114 | Clinical Genomics | **Done (1.0 sarek + VEP)** — see raredisease section above |  |
 | ~~**cutandrun**~~ | 109 | Epigenomics | **Done (1.0)** — see cutandrun section above |  |
-| **hic** | 108 | 3D Genomics | Hi-C analysis. HiCUP, cooler, juicer, HiGlass. | Specialized tooling |
+| ~~**hic**~~ | 108 | 3D Genomics | **Done (1.0)** — see hic section above |  |
 
 ### Not targeted
 
@@ -531,7 +560,7 @@ Done                  Next up — shared tooling builds on previous
 ✓ rnafusion (1.0)     + Arriba, STAR chimeric mode
 ✓ raredisease (1.0)   + Ensembl VEP annotation
 ✓ cutandrun (1.0)      chipseq tools + Bowtie2 + MACS2 --nomodel
-16. hic                 new stack (HiCUP, cooler)
+✓ hic (1.0)            Bowtie2 + pairtools + cooler
 ```
 
 ---
@@ -540,25 +569,25 @@ Done                  Next up — shared tooling builds on previous
 
 Tools already in `tools/` that will be reused across pipelines:
 
-| Tool | rnaseq | chipseq | atacseq | sarek | methylseq | scrnaseq | viralrecon | ampliseq | mag | taxprofiler | nanoseq | cutandrun |
-|------|--------|---------|---------|-------|-----------|----------|------------|----------|-----|-------------|---------|-----------|
-| fastp | x | x | x | x | x | x | x | | x | x | | x |
-| fastqc | x | x | x | x | x | x | x | x | x | x | x | x |
-| multiqc | x | x | x | x | x | x | x | x | x | x | x | x |
-| samtools-sort | x | x | x | x | x | | x | | | | x | |
-| samtools-index | x | x | x | x | x | | x | | | | x | x |
-| samtools-filter | | x | x | | | | | | | | | x |
-| samtools-stats | | | | x | | | x | | | | x | |
-| picard-markduplicates | x | x | x | x | x | | | | | | | x |
-| star-align | x | | | | | | | | | | | |
-| star-genome-generate | x | | | | | x | | | | | | |
-| starsolo | | | | | | x | | | | | | |
-| featurecounts | x | x | x | | | | | | | | | |
-| pigz | x | x | x | x | x | x | x | | | | | |
-| trim-galore | x | x | x | | x | | | | | | | |
-| bowtie2-align | | | | | | | | | x | | | x |
-| macs2-callpeak | | x | x | | | | | | | | | x |
-| deeptools-bamcoverage | | x | x | | | | | | | | | x |
+| Tool | rnaseq | chipseq | atacseq | sarek | methylseq | scrnaseq | viralrecon | ampliseq | mag | taxprofiler | nanoseq | cutandrun | hic |
+|------|--------|---------|---------|-------|-----------|----------|------------|----------|-----|-------------|---------|-----------|-----|
+| fastp | x | x | x | x | x | x | x | | x | x | | x | x |
+| fastqc | x | x | x | x | x | x | x | x | x | x | x | x | x |
+| multiqc | x | x | x | x | x | x | x | x | x | x | x | x | x |
+| samtools-sort | x | x | x | x | x | | x | | | | x | | |
+| samtools-index | x | x | x | x | x | | x | | | | x | x | |
+| samtools-filter | | x | x | | | | | | | | | x | |
+| samtools-stats | | | | x | | | x | | | | x | | |
+| picard-markduplicates | x | x | x | x | x | | | | | | | x | |
+| star-align | x | | | | | | | | | | | | |
+| star-genome-generate | x | | | | | x | | | | | | | |
+| starsolo | | | | | | x | | | | | | | |
+| featurecounts | x | x | x | | | | | | | | | | |
+| pigz | x | x | x | x | x | x | x | | | | | | |
+| trim-galore | x | x | x | | x | | | | | | | | |
+| bowtie2-align | | | | | | | | | x | | | x | |
+| macs2-callpeak | | x | x | | | | | | | | | x | |
+| deeptools-bamcoverage | | x | x | | | | | | | | | x | |
 
 New shared tools added:
 - **bwa-mem2** (index + align) — chipseq ✓, atacseq, sarek, methylseq
@@ -586,6 +615,10 @@ New tools added:
 - **star-align-fusion** — rnafusion ✓ (STAR with chimeric detection for fusion calling)
 - **arriba** — rnafusion ✓ (gene fusion detection from STAR chimeric alignments)
 - **ensembl-vep** — raredisease ✓ (variant effect prediction, consequence annotation)
+- **hic-mapping** — hic ✓ (two-step Bowtie2 Hi-C mapping with chimeric read rescue)
+- **pairtools-process** — hic ✓ (Hi-C pair parsing, sorting, deduplication)
+- **cooler-cload** — hic ✓ (contact matrix generation from pairs)
+- **cooler-zoomify** — hic ✓ (multi-resolution mcool with ICE normalization)
 
 New shared tools needed next:
 - **bedtools** — atacseq, sarek, viralrecon

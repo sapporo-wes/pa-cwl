@@ -1,0 +1,140 @@
+workflow: hic
+description: |
+  Hi-C chromatin conformation capture pipeline. Two-step Bowtie2 alignment
+  with chimeric read rescue, pairtools-based valid pair extraction and
+  deduplication, cooler contact map generation with ICE normalization.
+
+use_cases:
+  - "Analyze Hi-C chromatin interaction data"
+  - "Generate contact matrices from Hi-C experiments"
+  - "Create multi-resolution .mcool files for visualization"
+  - "Detect chromatin organization from 3C-based experiments"
+
+inputs:
+  - id: fastq_fwd
+    type: "File[]"
+    description: "Forward read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: fastq_rev
+    type: "File[]"
+    description: "Reverse read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: sample_ids
+    type: "string[]"
+    description: "Sample identifiers (same order as FASTQ files)"
+    required: true
+
+  - id: bowtie2_index_files
+    type: "File[]"
+    description: "Bowtie2 index files"
+    required: true
+    resolve_from:
+      - local_path
+
+  - id: bowtie2_index_base
+    type: string
+    description: "Bowtie2 index base name"
+    required: true
+
+  - id: chromsizes
+    type: File
+    description: "Chromosome sizes file (tab-separated)"
+    required: true
+    resolve_from:
+      - local_path
+
+  - id: ligation_site
+    type: string
+    description: "Ligation site sequence for the restriction enzyme"
+    required: true
+
+  - id: resolution
+    type: int
+    description: "Contact map bin resolution in base pairs"
+    required: false
+    default: 10000
+
+outputs:
+  - id: cool_matrices
+    type: "File[]"
+    description: "Single-resolution contact matrices (.cool)"
+
+  - id: mcool_matrices
+    type: "File[]"
+    description: "Multi-resolution contact matrices (.mcool)"
+
+  - id: valid_pairs
+    type: "File[]"
+    description: "Deduplicated valid pairs files"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for Hi-C FASTQ files and sample IDs"
+
+    - id: collect_reference
+      action: ask_user
+      description: "Ask for reference genome, Bowtie2 index, and chromosome sizes"
+
+    - id: configure_protocol
+      action: ask_user
+      description: "Ask for restriction enzyme / ligation site and resolution"
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve FASTQ and reference paths"
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit hic workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/hic/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve contact matrices, pairs, and QC report"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with interaction counts and QC summary"
+
+hints: |
+  - Common restriction enzymes and ligation sites:
+    - HindIII: restriction AAGCTT, ligation AAGCTAGCTT
+    - MboI/DpnII: restriction GATC, ligation GATCGATC
+    - Arima: uses multiple enzymes (GATC + GANTC)
+  - Resolution: 10kb is standard; use 5kb for high-depth, 50kb+ for low-depth
+  - Minimum depth: ~200M read pairs for mammalian genomes at 10kb resolution
+  - Cooler .mcool files are compatible with HiGlass visualization
+  - Planned v1.1: TAD calling (HiCExplorer), A/B compartments (cooltools)
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 16
+    min_cores: 8
+    estimated_storage_gb: 100

@@ -30,3 +30,4 @@ test-data/taxonomic/kraken2_viral/
 test-data/taxonomic/kraken2_testdb/
 test-data/fusion/star_index/
 test-data/yeast/bt2_index*
+test-data/hic/bt2_index*
