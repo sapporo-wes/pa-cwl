@@ -10,16 +10,58 @@ pa-cwl provides a curated collection of CWL v1.2 workflows for scientific data a
 - **CWL v1.2 workflows** — Portable, standards-compliant workflow definitions
 - **WES-ready execution** — Tested with [sapporo-wes](https://github.com/sapporo-wes/sapporo-service) and validated via [yevis-cli](https://github.com/sapporo-wes/yevis-cli)
 - **Workflow Run RO-Crate** — Provenance records for every validated execution
-- **Test data on Zenodo** — Persistent, DOI-backed datasets for acceptance testing
 
 ## Workflows
 
-| Workflow | Description | Status |
-|----------|-------------|--------|
-| [fetchngs](workflows/fetchngs/) | Fetch sequencing data from public repositories (SRA/ENA/DDBJ) | WIP |
-| [rnaseq](workflows/rnaseq/) | RNA-seq quantification (STAR, HISAT2, Salmon, RSEM, kallisto) | WIP |
+All 16 pipelines implemented and tested. Functional specifications derived from [nf-core](https://nf-co.re/) pipelines, rewritten as idiomatic CWL v1.2 (not transpiled).
 
-More workflows coming — see [Roadmap](#roadmap).
+### Data Retrieval
+
+| Workflow | Description | Key Tools |
+|----------|-------------|-----------|
+| [fetchngs](workflows/fetchngs/) | Fetch FASTQ from public repositories (SRA/ENA/DDBJ) | ENA API, fasterq-dump |
+
+### Transcriptomics
+
+| Workflow | Description | Key Tools |
+|----------|-------------|-----------|
+| [rnaseq](workflows/rnaseq/) | RNA-seq quantification (4 pathways) | STAR, HISAT2, Salmon, RSEM, kallisto |
+| [scrnaseq](workflows/scrnaseq/) | Single-cell RNA-seq (10x, Drop-seq) | STARsolo |
+| [rnafusion](workflows/rnafusion/) | Gene fusion detection | STAR (chimeric), Arriba |
+
+### Epigenomics
+
+| Workflow | Description | Key Tools |
+|----------|-------------|-----------|
+| [chipseq](workflows/chipseq/) | ChIP-seq peak calling | BWA-MEM2, MACS2, deepTools |
+| [atacseq](workflows/atacseq/) | ATAC-seq chromatin accessibility | BWA-MEM2, MACS2 (--nomodel) |
+| [methylseq](workflows/methylseq/) | Bisulfite-seq methylation | Bismark |
+| [cutandrun](workflows/cutandrun/) | CUT&RUN/CUT&TAG peak calling | Bowtie2, MACS2 (--nomodel), deepTools |
+
+### Variant Calling
+
+| Workflow | Description | Key Tools |
+|----------|-------------|-----------|
+| [sarek](workflows/sarek/) | Germline variant calling | BWA-MEM2, GATK4 HaplotypeCaller |
+| [raredisease](workflows/raredisease/) | Rare disease variant annotation | sarek + Ensembl VEP |
+| [viralrecon](workflows/viralrecon/) | Viral variant calling and consensus | BWA-MEM2, iVar |
+
+### Metagenomics
+
+| Workflow | Description | Key Tools |
+|----------|-------------|-----------|
+| [ampliseq](workflows/ampliseq/) | 16S/ITS amplicon sequencing | Cutadapt, DADA2 |
+| [mag](workflows/mag/) | Metagenome-assembled genomes | SPAdes, MetaBAT2, Prodigal |
+| [taxprofiler](workflows/taxprofiler/) | Taxonomic profiling | Kraken2, Bracken |
+
+### Long-Read & 3D Genomics
+
+| Workflow | Description | Key Tools |
+|----------|-------------|-----------|
+| [nanoseq](workflows/nanoseq/) | Nanopore long-read sequencing | minimap2, NanoPlot |
+| [hic](workflows/hic/) | Hi-C chromatin conformation | Bowtie2 (two-step), pairtools, cooler |
+
+68 CWL tools in `tools/`, shared across pipelines. See [pipeline roadmap](docs/pipeline-roadmap.md) for detailed feature tables and test matrices.
 
 ## For AI Agents
 
@@ -45,26 +87,16 @@ Every workflow contains an `agent.yaml` that provides:
 
 ```bash
 # Run locally with cwltool
-cwltool workflows/rnaseq/main.cwl examples/local-fastq.yaml
+cwltool workflows/rnaseq/main.cwl workflows/rnaseq/examples/star-salmon.yaml
 
 # Run via sapporo-wes
 # See docs/running-with-wes.md
 ```
 
-## Testing
-
-Workflows are validated through:
-
-1. **Local execution** — Run against sapporo-wes with real-sized test data
-2. **RO-Crate generation** — Execution provenance captured as Workflow Run RO-Crate
-3. **CI evaluation** — GitHub Actions validates RO-Crate completeness and output correctness
-4. **Acceptance testing** — Test data published on Zenodo for users to reproduce
-
 ## Roadmap
 
-- **Phase 0** — Repository scaffold, schemas, CI setup
-- **Phase 1** — fetchngs + rnaseq (proof of concept)
-- **Phase 2** — sarek, atacseq, chipseq, ampliseq, mag, differentialabundance
+- **Phase 1** — 16 core pipelines (fetchngs through hic) — **Complete**
+- **Phase 2** — v1.1 enhancements (additional pathways, tools, and modes per pipeline)
 - **Phase 3** — MCP server for agent discovery, Python client library
 - **Phase 4** — Community contributions, workflow template generator
 
