@@ -1,14 +1,10 @@
-name: Evaluate Workflow Run RO-Crate
+name: Validate Workflows
 
 on:
   push:
     branches: [main]
-    paths:
-      - "workflows/*/tests/**"
   pull_request:
     branches: [main]
-    paths:
-      - "workflows/**"
 
 jobs:
   validate-cwl:
@@ -27,10 +23,16 @@ jobs:
 
       - name: Validate all CWL files
         run: |
-          find workflows/ tools/ -name "*.cwl" -print0 | while IFS= read -r -d '' cwl_file; do
-            echo "Validating: ${cwl_file}"
-            cwltool --validate "${cwl_file}"
-          done
+          status=0
+          while IFS= read -r -d '' cwl_file; do
+            if cwltool --validate "${cwl_file}" 2>&1; then
+              echo "OK: ${cwl_file}"
+            else
+              echo "FAIL: ${cwl_file}"
+              status=1
+            fi
+          done < <(find workflows/ tools/ -name "*.cwl" -print0)
+          exit $status
 
   validate-agent-yaml:
     name: Validate agent.yaml
@@ -48,14 +50,19 @@ jobs:
 
       - name: Validate agent.yaml files
         run: |
-          python -c "
+          python3 << 'PYEOF'
           import yaml, jsonschema, glob, sys
 
           with open('schemas/agent-spec.schema.yaml') as f:
               schema = yaml.safe_load(f)
 
+          agent_files = sorted(glob.glob('workflows/*/agent.yaml'))
+          if not agent_files:
+              print("ERROR: No agent.yaml files found")
+              sys.exit(1)
+
           errors = []
-          for agent_file in glob.glob('workflows/*/agent.yaml'):
+          for agent_file in agent_files:
               with open(agent_file) as f:
                   doc = yaml.safe_load(f)
               try:
@@ -65,38 +72,32 @@ jobs:
                   errors.append(f'FAIL: {agent_file}: {e.message}')
                   print(f'FAIL: {agent_file}: {e.message}')
 
+          print(f'\n{len(agent_files)} agent.yaml files validated, {len(errors)} errors')
           if errors:
               sys.exit(1)
-          "
+          PYEOF
 
-  evaluate-ro-crate:
-    name: Evaluate RO-Crate
+  check-structure:
+    name: Check workflow structure
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: pip install rocrate
-
-      - name: Evaluate Workflow Run RO-Crates
+      - name: Verify each workflow has required files
         run: |
-          for crate_dir in workflows/*/tests/ro-crate/; do
-            if [ -d "${crate_dir}" ]; then
-              echo "Evaluating RO-Crate: ${crate_dir}"
-              python -c "
-          from rocrate.rocrate import ROCrate
-          crate = ROCrate('${crate_dir}')
-          # Verify crate is readable and has expected structure
-          print(f'  Root dataset: {crate.root_dataset.id}')
-          print(f'  Entities: {len(list(crate.get_entities()))}')
-          for e in crate.get_entities():
-              print(f'    - {e.id} ({e.type})')
-          "
+          status=0
+          for dir in workflows/*/; do
+            name=$(basename "$dir")
+            missing=""
+            [ ! -f "${dir}main.cwl" ] && missing="${missing} main.cwl"
+            [ ! -f "${dir}agent.yaml" ] && missing="${missing} agent.yaml"
+            [ ! -d "${dir}examples" ] && missing="${missing} examples/"
+            [ ! -d "${dir}tests" ] && missing="${missing} tests/"
+            if [ -n "$missing" ]; then
+              echo "FAIL: ${name} — missing:${missing}"
+              status=1
+            else
+              echo "OK: ${name}"
             fi
           done
-          echo "RO-Crate evaluation complete"
+          exit $status

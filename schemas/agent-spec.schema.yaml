@@ -89,6 +89,8 @@ definitions:
           enum:
             - local_path
             - sra_accession
+            - bioproject_accession
+            - geo_accession
             - https_url
             - s3_uri
             - gcp_uri
@@ -133,6 +135,7 @@ definitions:
         enum:
           - ask_user
           - resolve_input
+          - resolve_protocol
           - select_option
           - chain_workflow
           - generate_input_object
