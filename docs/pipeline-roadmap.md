@@ -396,6 +396,38 @@ Gene fusion detection from RNA-seq data using STAR chimeric alignment and Arriba
 
 ---
 
+### raredisease — Rare Disease Variant Calling and Annotation
+
+**Status: 1.0 — sarek + VEP annotation tested (Docker)**
+
+Extends the sarek germline variant calling pipeline with Ensembl VEP annotation.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FastQC + fastp | Done | Reused from sarek |
+| BWA-MEM2 alignment | Done | Reused from sarek |
+| Picard MarkDuplicates | Done | Reused from sarek |
+| GATK HaplotypeCaller | Done | Reused from sarek |
+| GATK VariantFiltration | Done | Reused from sarek |
+| Ensembl VEP annotation | Done | Cache or GFF mode, auto-bgzip GFF |
+| samtools stats | Done | |
+| bcftools stats | Done | |
+| MultiQC | Done | |
+| DeepVariant | Planned v1.1 | Alternative SNV caller |
+| Joint calling | Planned v1.1 | GenomicsDBImport + GenotypeGVCFs |
+| SV calling (Manta) | Planned v1.1 | |
+| CADD scores | Planned v1.1 | Pathogenicity scoring |
+| GENMOD ranking | Planned v1.1 | Pedigree-aware variant ranking |
+| ExpansionHunter | Planned v1.1 | Repeat expansion detection |
+
+**Tested pathway matrix:**
+
+| Mode | Docker |
+|------|--------|
+| VEP annotation (GFF3 mode, synthetic genome) | Pass |
+
+---
+
 ## Conversion Targets
 
 Ranked by GitHub stars (proxy for community adoption). All are released/stable nf-core pipelines.
@@ -430,7 +462,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 
 | Pipeline | Stars | Domain | Description | Notes |
 |----------|-------|--------|-------------|-------|
-| **raredisease** | 114 | Clinical Genomics | Rare disease WGS/WES. Overlaps heavily with sarek + annotation (VEP, CADD). | Do sarek first |
+| ~~**raredisease**~~ | 114 | Clinical Genomics | **Done (1.0 sarek + VEP)** — see raredisease section above |  |
 | **cutandrun** | 109 | Epigenomics | CUT&RUN/CUT&TAG. Shares ~80% with chipseq. | Do chipseq first |
 | **hic** | 108 | 3D Genomics | Hi-C analysis. HiCUP, cooler, juicer, HiGlass. | Specialized tooling |
 
@@ -467,7 +499,7 @@ Done                  Next up — shared tooling builds on previous
 ✓ taxprofiler (1.0)   + Kraken2, Bracken
 ✓ nanoseq (1.0)       + minimap2, NanoPlot
 ✓ rnafusion (1.0)     + Arriba, STAR chimeric mode
-14. raredisease         sarek + annotation extensions
+✓ raredisease (1.0)   + Ensembl VEP annotation
 15. cutandrun           chipseq + spike-in normalization
 16. hic                 new stack (HiCUP, cooler)
 ```
@@ -519,6 +551,7 @@ New tools added:
 - **nanoplot** — nanoseq ✓ (Nanopore QC: read length, quality, throughput)
 - **star-align-fusion** — rnafusion ✓ (STAR with chimeric detection for fusion calling)
 - **arriba** — rnafusion ✓ (gene fusion detection from STAR chimeric alignments)
+- **ensembl-vep** — raredisease ✓ (variant effect prediction, consequence annotation)
 
 New shared tools needed next:
 - **bedtools** — atacseq, sarek, viralrecon

@@ -1,0 +1,154 @@
+workflow: raredisease
+description: |
+  Rare disease variant calling and annotation pipeline. Extends sarek germline
+  calling with Ensembl VEP annotation for clinical-grade variant interpretation.
+  GATK HaplotypeCaller for SNV/indel calling, hard filtering, and VEP for
+  functional consequence prediction.
+
+use_cases:
+  - "Call and annotate variants for rare disease diagnosis"
+  - "Whole genome sequencing analysis for undiagnosed patients"
+  - "Whole exome sequencing with clinical variant annotation"
+  - "Family trio analysis for de novo variant detection"
+
+inputs:
+  - id: fastq_fwd
+    type: "File[]"
+    description: "Forward read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: fastq_rev
+    type: "File[]"
+    description: "Reverse read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: sample_ids
+    type: "string[]"
+    description: "Sample identifiers (same order as FASTQ files)"
+    required: true
+
+  - id: genome_fasta
+    type: File
+    description: "Reference genome FASTA"
+    required: true
+    resolve_from:
+      - local_path
+      - https_url
+
+  - id: bwa_index
+    type: File
+    description: "Pre-built BWA-MEM2 indexed genome FASTA"
+    required: false
+    resolve_from:
+      - local_path
+
+  - id: dbsnp
+    type: File
+    description: "dbSNP VCF for variant annotation"
+    required: false
+    resolve_from:
+      - local_path
+
+  - id: intervals
+    type: File
+    description: "BED file for WES/targeted sequencing regions"
+    required: false
+    resolve_from:
+      - local_path
+
+  - id: vep_cache_dir
+    type: Directory
+    description: "VEP cache directory for full annotation"
+    required: false
+    resolve_from:
+      - local_path
+
+  - id: vep_gff
+    type: File
+    description: "GFF3 annotation (alternative to VEP cache)"
+    required: false
+    resolve_from:
+      - local_path
+
+outputs:
+  - id: annotated_vcfs
+    type: "File[]"
+    description: "VEP-annotated VCF files per sample"
+
+  - id: filtered_vcfs
+    type: "File[]"
+    description: "Hard-filtered VCF files (before VEP)"
+
+  - id: aligned_bams
+    type: "File[]"
+    description: "Marked-duplicate BAM files per sample"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for FASTQ files, sample IDs, and family structure"
+
+    - id: collect_reference
+      action: ask_user
+      description: "Ask for reference genome, BWA index, and dbSNP"
+
+    - id: collect_vep
+      action: ask_user
+      description: "Ask for VEP cache or GFF annotation"
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve FASTQ and reference paths"
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit raredisease workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/raredisease/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve annotated VCFs and BAMs"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with variant counts and annotation summary"
+
+hints: |
+  - VEP cache: download from https://ftp.ensembl.org/pub/release-115/variation/vep/
+    - homo_sapiens_vep_115_GRCh38.tar.gz (~15GB)
+    - homo_sapiens_merged_vep_115_GRCh38.tar.gz (~30GB, includes RefSeq)
+  - For WES: provide intervals BED to restrict calling to exome capture regions
+  - dbSNP: ftp://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/
+  - Family analysis: run each family member independently, then compare VCFs
+  - Planned v1.1: Joint calling, DeepVariant, SV calling (Manta), CADD scores
+  - Planned v1.1: Pedigree-aware ranking (GENMOD), repeat expansion (ExpansionHunter)
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 32
+    min_cores: 8
+    estimated_storage_gb: 200

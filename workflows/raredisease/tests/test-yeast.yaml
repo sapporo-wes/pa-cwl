@@ -1,0 +1,19 @@
+# Test: Rare disease pipeline with yeast test data
+# VEP runs in GFF mode since no cache available for yeast
+
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R2.fastq.gz
+
+sample_ids:
+  - yeast_test
+
+genome_fasta:
+  class: File
+  path: ../../../test-data/yeast/genome.fa
+
+# No VEP cache for yeast - VEP will run in minimal mode

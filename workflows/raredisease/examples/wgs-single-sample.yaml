@@ -1,0 +1,41 @@
+# Rare disease WGS analysis with VEP annotation
+
+fastq_fwd:
+  - class: File
+    path: /path/to/proband_R1.fastq.gz
+
+fastq_rev:
+  - class: File
+    path: /path/to/proband_R2.fastq.gz
+
+sample_ids:
+  - proband
+
+genome_fasta:
+  class: File
+  path: /path/to/GRCh38.primary_assembly.genome.fa
+
+# Pre-built BWA-MEM2 index (optional, built automatically if omitted)
+bwa_index:
+  class: File
+  path: /path/to/GRCh38.primary_assembly.genome.fa
+  secondaryFiles:
+    - class: File
+      path: /path/to/GRCh38.primary_assembly.genome.fa.0123
+    - class: File
+      path: /path/to/GRCh38.primary_assembly.genome.fa.amb
+    - class: File
+      path: /path/to/GRCh38.primary_assembly.genome.fa.ann
+    - class: File
+      path: /path/to/GRCh38.primary_assembly.genome.fa.bwt.2bit.64
+    - class: File
+      path: /path/to/GRCh38.primary_assembly.genome.fa.pac
+
+# VEP cache for full annotation
+# Download: https://ftp.ensembl.org/pub/release-115/variation/vep/
+vep_cache_dir:
+  class: Directory
+  path: /path/to/vep_cache
+
+vep_species: homo_sapiens
+vep_assembly: GRCh38
