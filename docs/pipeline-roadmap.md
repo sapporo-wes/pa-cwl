@@ -487,45 +487,86 @@ Hi-C chromatin interaction analysis with two-step Bowtie2 alignment, pairtools v
 
 ---
 
-## Conversion Targets
+## v1.1 Roadmap — Additional Pathways and Tools
 
-Ranked by GitHub stars (proxy for community adoption). All are released/stable nf-core pipelines.
+Planned enhancements for each pipeline. These add alternative tool paths, specialized modes, and downstream analysis features on top of the v1.0 core.
 
-### Tier 1 — Highest impact, significant tool overlap with rnaseq
+### Variant Calling & Clinical
 
-| Pipeline | Stars | Domain | Description | Shared tools |
-|----------|-------|--------|-------------|--------------|
-| ~~**sarek**~~ | 554 | Variant Calling | **Done (1.0 germline)** — see sarek section above |  |
-| ~~**chipseq**~~ | 233 | Epigenomics | **Done (1.0)** — see chipseq section above |  |
-| ~~**atacseq**~~ | 220 | Epigenomics | **Done (1.0)** — see atacseq section above |  |
+| Pipeline | Feature | Description |
+|----------|---------|-------------|
+| sarek | BQSR | Base quality score recalibration (requires known sites VCFs) |
+| sarek | Joint calling | GenomicsDBImport + GenotypeGVCFs for multi-sample cohorts |
+| sarek | Scatter-gather | Interval-based parallelization for large genomes |
+| raredisease | DeepVariant | Alternative SNV caller |
+| raredisease | Joint calling | GenomicsDBImport + GenotypeGVCFs |
+| raredisease | SV calling (Manta) | Structural variant detection |
+| raredisease | CADD scores | Pathogenicity scoring |
+| raredisease | GENMOD ranking | Pedigree-aware variant ranking |
+| raredisease | ExpansionHunter | Repeat expansion detection |
+| viralrecon | Pangolin | SARS-CoV-2 lineage assignment |
+| viralrecon | Nextclade | Multi-pathogen annotation |
+| viralrecon | bcftools path | Alternative to iVar variant calling |
+| viralrecon | Kraken2 host filtering | Remove host reads before alignment |
 
-### Tier 2 — High impact, some new tool domains
+### Transcriptomics & Single-Cell
 
-| Pipeline | Stars | Domain | Description | New tools needed |
-|----------|-------|--------|-------------|-----------------|
-| ~~**scrnaseq**~~ | 316 | Single-cell | **Done (1.0 STARsolo)** — see scrnaseq section above |  |
-| ~~**methylseq**~~ | 189 | Epigenomics | **Done (1.0 Bismark)** — see methylseq section above |  |
-| ~~**ampliseq**~~ | 236 | Microbiome | **Done (1.0 DADA2)** — see ampliseq section above |  |
-| ~~**viralrecon**~~ | 159 | Virology | **Done (1.0 iVar amplicon)** — see viralrecon section above |  |
+| Pipeline | Feature | Description |
+|----------|---------|-------------|
+| scrnaseq | Alevin-Fry | Salmon-based pseudo-alignment path |
+| scrnaseq | Kallisto+BUStools | Alternative quantification path |
+| scrnaseq | Smart-seq2 | Plate-based mode (no barcode demux) |
+| scrnaseq | Empty droplet detection | dropletUtils::emptyDrops (R) |
+| rnafusion | STAR-Fusion | CTAT resource bundle required |
+| rnafusion | FusionCatcher | Alternative fusion caller |
+| rnafusion | FusionInspector | Post-processing validation |
+| rnafusion | Arriba visualization | draw_fusions.R |
 
-### Tier 3 — Specialized, mostly new tool stacks
+### Epigenomics & 3D Genomics
 
-| Pipeline | Stars | Domain | Description | Notes |
-|----------|-------|--------|-------------|-------|
-| ~~**mag**~~ | 279 | Metagenomics | **Done (1.0 SPAdes + MetaBAT2)** — see mag section above |  |
-| ~~**taxprofiler**~~ | 180 | Metagenomics | **Done (1.0 Kraken2 + Bracken)** — see taxprofiler section above |  |
-| ~~**nanoseq**~~ | 220 | Long-read | **Done (1.0 minimap2 + NanoPlot)** — see nanoseq section above |  |
-| ~~**rnafusion**~~ | 172 | Transcriptomics | **Done (1.0 Arriba)** — see rnafusion section above |  |
+| Pipeline | Feature | Description |
+|----------|---------|-------------|
+| methylseq | bwa-meth + MethylDackel | Alternative aligner path |
+| methylseq | RRBS mode | Skip deduplication for reduced representation |
+| cutandrun | SEACR | Alternative peak caller for CUT&RUN |
+| cutandrun | Spike-in normalization | E. coli spike-in calibration |
+| cutandrun | Fragment size QC | CUT&RUN diagnostic plots |
+| hic | TAD calling | HiCExplorer |
+| hic | A/B compartments | cooltools eigenvector decomposition |
+| hic | Juicer .hic | Convert cooler to .hic format |
 
-### Tier 4 — Niche but valuable
+### Metagenomics & Long-Read
 
-| Pipeline | Stars | Domain | Description | Notes |
-|----------|-------|--------|-------------|-------|
-| ~~**raredisease**~~ | 114 | Clinical Genomics | **Done (1.0 sarek + VEP)** — see raredisease section above |  |
-| ~~**cutandrun**~~ | 109 | Epigenomics | **Done (1.0)** — see cutandrun section above |  |
-| ~~**hic**~~ | 108 | 3D Genomics | **Done (1.0)** — see hic section above |  |
+| Pipeline | Feature | Description |
+|----------|---------|-------------|
+| ampliseq | QIIME2 integration | Phylogenetic diversity, ordination |
+| ampliseq | Single-end mode | |
+| ampliseq | Species-level assignment | addSpecies with exact matching |
+| mag | Host read removal | Bowtie2 against host reference |
+| mag | MaxBin2 | Alternative binner |
+| mag | DAS Tool | Bin refinement |
+| mag | BUSCO | Bin completeness assessment |
+| mag | GTDB-Tk | Bin taxonomic classification |
+| mag | Prokka | Bin functional annotation |
+| taxprofiler | MetaPhlAn | Marker-gene based profiling |
+| taxprofiler | Centrifuge | FM-index based classification |
+| taxprofiler | Krona | Interactive taxonomy visualization |
+| taxprofiler | Taxpasta | Standardized output format |
+| nanoseq | NanoFilt | Quality filtering |
+| nanoseq | StringTie2 | Transcript assembly (RNA mode) |
+| nanoseq | medaka | Short variant calling from Nanopore |
+| nanoseq | sniffles | Structural variant detection |
 
-### Not targeted
+### v2.0 (future)
+
+| Pipeline | Feature | Description |
+|----------|---------|-------------|
+| sarek | Mutect2 | Somatic variant calling (tumor-normal pairs) |
+| sarek | VEP/snpEff | Functional variant annotation |
+
+---
+
+## Pipelines Not Targeted
 
 | Pipeline | Stars | Why skip |
 |----------|-------|---------|
@@ -537,89 +578,53 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 
 ---
 
-## Suggested Conversion Order
+## Conversion History
 
-Prioritized by impact, tool reuse, and incremental complexity:
+All 16 pipelines completed in priority order, building tool reuse incrementally:
 
-```
-Done                  Next up — shared tooling builds on previous
-  │                         │
-  ▼                         ▼
-✓ rnaseq (1.0)        fastp, samtools, picard, MultiQC, STAR, featureCounts, RSeQC
-✓ fetchngs (1.0)      utility — feeds all pipelines
-✓ chipseq (1.0)       + BWA-MEM2, MACS2, deepTools, samtools-filter
-✓ atacseq (1.0)       ~90% shared with chipseq + --nomodel
-✓ sarek (1.0)         + GATK4 HaplotypeCaller, VariantFiltration, prepare-gatk-reference
-✓ methylseq (1.0)     + Bismark (genome-prep, align, dedup, methylation-extractor)
-✓ scrnaseq (1.0)      + STARsolo (barcode-aware alignment + count matrices)
-✓ viralrecon (1.0)    + ivar (trim, variants, consensus)
-✓ ampliseq (1.0)      + cutadapt, DADA2 (R-based ASV inference + taxonomy)
-✓ mag (1.0)           + SPAdes, Bowtie2, MetaBAT2, Prodigal, QUAST
-✓ taxprofiler (1.0)   + Kraken2, Bracken
-✓ nanoseq (1.0)       + minimap2, NanoPlot
-✓ rnafusion (1.0)     + Arriba, STAR chimeric mode
-✓ raredisease (1.0)   + Ensembl VEP annotation
-✓ cutandrun (1.0)      chipseq tools + Bowtie2 + MACS2 --nomodel
-✓ hic (1.0)            Bowtie2 + pairtools + cooler
-```
+| # | Pipeline | New Tools Introduced |
+|---|----------|---------------------|
+| 1 | rnaseq | fastp, STAR, samtools, picard, featureCounts, RSeQC, MultiQC |
+| 2 | fetchngs | ENA API client, fasterq-dump |
+| 3 | chipseq | BWA-MEM2, MACS2, deepTools, samtools-filter |
+| 4 | atacseq | (shared with chipseq) |
+| 5 | sarek | GATK4 HaplotypeCaller, VariantFiltration, bcftools |
+| 6 | methylseq | Bismark (genome-prep, align, dedup, methylation-extractor) |
+| 7 | scrnaseq | STARsolo |
+| 8 | viralrecon | iVar (trim, variants, consensus) |
+| 9 | ampliseq | Cutadapt, DADA2 (denoise + taxonomy) |
+| 10 | mag | SPAdes, MEGAHIT, Bowtie2, MetaBAT2, Prodigal, QUAST |
+| 11 | taxprofiler | Kraken2, Bracken |
+| 12 | nanoseq | minimap2, NanoPlot |
+| 13 | rnafusion | STAR (chimeric mode), Arriba |
+| 14 | raredisease | Ensembl VEP |
+| 15 | cutandrun | (shared: Bowtie2, MACS2, deepTools) |
+| 16 | hic | hic-mapping, pairtools, cooler (cload + zoomify) |
 
 ---
 
 ## Tool Reuse Matrix
 
-Tools already in `tools/` that will be reused across pipelines:
+68 tools in `tools/`, shared across 16 pipelines. Core shared tools:
 
-| Tool | rnaseq | chipseq | atacseq | sarek | methylseq | scrnaseq | viralrecon | ampliseq | mag | taxprofiler | nanoseq | cutandrun | hic |
-|------|--------|---------|---------|-------|-----------|----------|------------|----------|-----|-------------|---------|-----------|-----|
-| fastp | x | x | x | x | x | x | x | | x | x | | x | x |
-| fastqc | x | x | x | x | x | x | x | x | x | x | x | x | x |
-| multiqc | x | x | x | x | x | x | x | x | x | x | x | x | x |
-| samtools-sort | x | x | x | x | x | | x | | | | x | | |
-| samtools-index | x | x | x | x | x | | x | | | | x | x | |
-| samtools-filter | | x | x | | | | | | | | | x | |
-| samtools-stats | | | | x | | | x | | | | x | | |
-| picard-markduplicates | x | x | x | x | x | | | | | | | x | |
-| star-align | x | | | | | | | | | | | | |
-| star-genome-generate | x | | | | | x | | | | | | | |
-| starsolo | | | | | | x | | | | | | | |
-| featurecounts | x | x | x | | | | | | | | | | |
-| pigz | x | x | x | x | x | x | x | | | | | | |
-| trim-galore | x | x | x | | x | | | | | | | | |
-| bowtie2-align | | | | | | | | | x | | | x | |
-| macs2-callpeak | | x | x | | | | | | | | | x | |
-| deeptools-bamcoverage | | x | x | | | | | | | | | x | |
+| Tool | Pipelines using it |
+|------|--------------------|
+| fastqc | all 16 (except fetchngs) |
+| multiqc | all 16 (except fetchngs) |
+| fastp | rnaseq, chipseq, atacseq, sarek, methylseq, scrnaseq, viralrecon, mag, taxprofiler, cutandrun, hic |
+| samtools-sort | rnaseq, chipseq, atacseq, sarek, methylseq, viralrecon, nanoseq |
+| samtools-index | rnaseq, chipseq, atacseq, sarek, methylseq, viralrecon, nanoseq, cutandrun |
+| picard-markduplicates | rnaseq, chipseq, atacseq, sarek, methylseq, viralrecon, cutandrun |
+| bwa-mem2 (index + align) | chipseq, atacseq, sarek, viralrecon |
+| bowtie2 (build + align) | mag, cutandrun, hic |
+| macs2-callpeak | chipseq, atacseq, cutandrun |
+| deeptools-bamcoverage | chipseq, atacseq, cutandrun |
+| samtools-filter | chipseq, atacseq, cutandrun |
+| samtools-stats | sarek, viralrecon, nanoseq |
+| bcftools-stats | sarek, raredisease |
+| star-genome-generate | rnaseq, scrnaseq |
+| trim-galore | rnaseq, chipseq, atacseq, methylseq |
+| pigz | rnaseq, chipseq, atacseq, sarek, methylseq, scrnaseq, viralrecon |
+| featurecounts | rnaseq, chipseq, atacseq |
 
-New shared tools added:
-- **bwa-mem2** (index + align) — chipseq ✓, atacseq, sarek, methylseq
-- **deeptools** (bamCoverage) — chipseq ✓, atacseq
-- **samtools-filter** — chipseq ✓, atacseq
-- **samtools-sort-index** — chipseq ✓ (combined sort+index)
-- **macs2-callpeak** — chipseq ✓, atacseq
-
-New tools added:
-- **starsolo** — scrnaseq ✓ (STARsolo barcode-aware alignment + count matrices)
-- **cutadapt** — ampliseq ✓ (5'-anchored primer trimming)
-- **dada2-denoise** — ampliseq ✓ (full DADA2 pipeline: filter → error learning → denoise → merge → chimera removal)
-- **dada2-assign-taxonomy** — ampliseq ✓ (naive Bayesian taxonomy assignment)
-- **megahit** — mag ✓ (de novo metagenome assembly)
-- **spades** — mag ✓ (metaSPAdes metagenome assembly)
-- **bowtie2-build** — mag ✓ (build Bowtie2 index)
-- **bowtie2-align** — mag ✓ (short read alignment with sorted BAM output)
-- **metabat2** — mag ✓ (depth calculation + metagenome binning)
-- **prodigal** — mag ✓ (prokaryotic gene prediction)
-- **quast** — mag ✓ (assembly quality assessment)
-- **kraken2** — taxprofiler ✓ (k-mer taxonomic classification)
-- **bracken** — taxprofiler ✓ (Bayesian abundance re-estimation)
-- **minimap2** — nanoseq ✓ (long-read alignment, Nanopore/PacBio)
-- **nanoplot** — nanoseq ✓ (Nanopore QC: read length, quality, throughput)
-- **star-align-fusion** — rnafusion ✓ (STAR with chimeric detection for fusion calling)
-- **arriba** — rnafusion ✓ (gene fusion detection from STAR chimeric alignments)
-- **ensembl-vep** — raredisease ✓ (variant effect prediction, consequence annotation)
-- **hic-mapping** — hic ✓ (two-step Bowtie2 Hi-C mapping with chimeric read rescue)
-- **pairtools-process** — hic ✓ (Hi-C pair parsing, sorting, deduplication)
-- **cooler-cload** — hic ✓ (contact matrix generation from pairs)
-- **cooler-zoomify** — hic ✓ (multi-resolution mcool with ICE normalization)
-
-New shared tools needed next:
-- **bedtools** — atacseq, sarek, viralrecon
-- **bcftools** — sarek, viralrecon
+Pipeline-specific tools: STARsolo, Cutadapt, DADA2, SPAdes, MEGAHIT, MetaBAT2, Prodigal, QUAST, Kraken2, Bracken, minimap2, NanoPlot, Arriba, star-align-fusion, Ensembl VEP, iVar, Bismark, hic-mapping, pairtools, cooler.
