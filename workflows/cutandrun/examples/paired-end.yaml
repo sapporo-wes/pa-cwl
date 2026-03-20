@@ -1,0 +1,34 @@
+# Example input: CUT&RUN with narrow peak calling
+# Replace paths with your actual data
+fastq_fwd:
+  - class: File
+    path: /data/cutandrun/sample1_R1.fastq.gz
+  - class: File
+    path: /data/cutandrun/sample2_R1.fastq.gz
+fastq_rev:
+  - class: File
+    path: /data/cutandrun/sample1_R2.fastq.gz
+  - class: File
+    path: /data/cutandrun/sample2_R2.fastq.gz
+sample_ids:
+  - H3K4me3_rep1
+  - H3K4me3_rep2
+genome_fasta:
+  class: File
+  path: /data/references/hg38.fa
+bowtie2_index_files:
+  - class: File
+    path: /data/references/bt2_index.1.bt2
+  - class: File
+    path: /data/references/bt2_index.2.bt2
+  - class: File
+    path: /data/references/bt2_index.3.bt2
+  - class: File
+    path: /data/references/bt2_index.4.bt2
+  - class: File
+    path: /data/references/bt2_index.rev.1.bt2
+  - class: File
+    path: /data/references/bt2_index.rev.2.bt2
+bowtie2_index_base: bt2_index
+genome_size: "hs"
+peak_type: narrow

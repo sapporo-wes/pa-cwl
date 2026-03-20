@@ -428,6 +428,36 @@ Extends the sarek germline variant calling pipeline with Ensembl VEP annotation.
 
 ---
 
+### cutandrun — CUT&RUN/CUT&TAG Peak Calling
+
+**Status: 1.0 — Narrow peak mode tested (local)**
+
+CUT&RUN and CUT&TAG analysis with Bowtie2 alignment, MACS2 peak calling (--nomodel), and bigWig coverage tracks.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| FastQC | Done | |
+| fastp trimming | Done | |
+| Bowtie2 alignment | Done | With read group tags |
+| Picard MarkDuplicates | Done | |
+| samtools filter | Done | -F 1804 -f 2 -q 1 |
+| samtools index | Done | |
+| MACS2 --nomodel peak calling | Done | Narrow (TF) or broad (histone) modes |
+| deepTools bamCoverage | Done | Normalized bigWig generation |
+| Optional IgG control | Done | Optional control inputs in workflow |
+| MultiQC | Done | Integrates FastQC, fastp, Bowtie2, Picard |
+| SEACR peak calling | Planned v1.1 | Alternative to MACS2 for CUT&RUN |
+| Spike-in normalization | Planned v1.1 | E. coli spike-in calibration |
+| Fragment size QC | Planned v1.1 | CUT&RUN diagnostic plots |
+
+**Tested pathway matrix:**
+
+| Mode | Local |
+|------|-------|
+| Narrow peaks (no control, yeast) | Pass |
+
+---
+
 ## Conversion Targets
 
 Ranked by GitHub stars (proxy for community adoption). All are released/stable nf-core pipelines.
@@ -463,7 +493,7 @@ Ranked by GitHub stars (proxy for community adoption). All are released/stable n
 | Pipeline | Stars | Domain | Description | Notes |
 |----------|-------|--------|-------------|-------|
 | ~~**raredisease**~~ | 114 | Clinical Genomics | **Done (1.0 sarek + VEP)** — see raredisease section above |  |
-| **cutandrun** | 109 | Epigenomics | CUT&RUN/CUT&TAG. Shares ~80% with chipseq. | Do chipseq first |
+| ~~**cutandrun**~~ | 109 | Epigenomics | **Done (1.0)** — see cutandrun section above |  |
 | **hic** | 108 | 3D Genomics | Hi-C analysis. HiCUP, cooler, juicer, HiGlass. | Specialized tooling |
 
 ### Not targeted
@@ -500,7 +530,7 @@ Done                  Next up — shared tooling builds on previous
 ✓ nanoseq (1.0)       + minimap2, NanoPlot
 ✓ rnafusion (1.0)     + Arriba, STAR chimeric mode
 ✓ raredisease (1.0)   + Ensembl VEP annotation
-15. cutandrun           chipseq + spike-in normalization
+✓ cutandrun (1.0)      chipseq tools + Bowtie2 + MACS2 --nomodel
 16. hic                 new stack (HiCUP, cooler)
 ```
 
@@ -510,21 +540,25 @@ Done                  Next up — shared tooling builds on previous
 
 Tools already in `tools/` that will be reused across pipelines:
 
-| Tool | rnaseq | chipseq | atacseq | sarek | methylseq | scrnaseq | viralrecon | ampliseq | mag | taxprofiler | nanoseq |
-|------|--------|---------|---------|-------|-----------|----------|------------|----------|-----|-------------|---------|
-| fastp | x | x | x | x | x | x | x | | x | x | |
-| fastqc | x | x | x | x | x | x | x | x | x | x | x |
-| multiqc | x | x | x | x | x | x | x | x | x | x | x |
-| samtools-sort | x | x | x | x | x | | x | | | | x |
-| samtools-index | x | x | x | x | x | | x | | | | x |
-| samtools-stats | | | | x | | | x | | | | x |
-| picard-markduplicates | x | x | x | x | x | | | | | | |
-| star-align | x | | | | | | | | | | |
-| star-genome-generate | x | | | | | x | | | | | |
-| starsolo | | | | | | x | | | | | |
-| featurecounts | x | x | x | | | | | | | | |
-| pigz | x | x | x | x | x | x | x | | | | |
-| trim-galore | x | x | x | | x | | | | | | |
+| Tool | rnaseq | chipseq | atacseq | sarek | methylseq | scrnaseq | viralrecon | ampliseq | mag | taxprofiler | nanoseq | cutandrun |
+|------|--------|---------|---------|-------|-----------|----------|------------|----------|-----|-------------|---------|-----------|
+| fastp | x | x | x | x | x | x | x | | x | x | | x |
+| fastqc | x | x | x | x | x | x | x | x | x | x | x | x |
+| multiqc | x | x | x | x | x | x | x | x | x | x | x | x |
+| samtools-sort | x | x | x | x | x | | x | | | | x | |
+| samtools-index | x | x | x | x | x | | x | | | | x | x |
+| samtools-filter | | x | x | | | | | | | | | x |
+| samtools-stats | | | | x | | | x | | | | x | |
+| picard-markduplicates | x | x | x | x | x | | | | | | | x |
+| star-align | x | | | | | | | | | | | |
+| star-genome-generate | x | | | | | x | | | | | | |
+| starsolo | | | | | | x | | | | | | |
+| featurecounts | x | x | x | | | | | | | | | |
+| pigz | x | x | x | x | x | x | x | | | | | |
+| trim-galore | x | x | x | | x | | | | | | | |
+| bowtie2-align | | | | | | | | | x | | | x |
+| macs2-callpeak | | x | x | | | | | | | | | x |
+| deeptools-bamcoverage | | x | x | | | | | | | | | x |
 
 New shared tools added:
 - **bwa-mem2** (index + align) — chipseq ✓, atacseq, sarek, methylseq

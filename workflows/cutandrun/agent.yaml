@@ -1,0 +1,135 @@
+workflow: cutandrun
+description: |
+  CUT&RUN and CUT&TAG analysis pipeline. Bowtie2 alignment,
+  duplicate marking, MACS2 peak calling (--nomodel mode), and
+  bigWig track generation. Supports optional IgG control.
+
+use_cases:
+  - "Call peaks from CUT&RUN experiments"
+  - "Analyze CUT&TAG chromatin profiling data"
+  - "Detect histone modification or TF binding from CUT&RUN"
+  - "Generate genome browser tracks from CUT&RUN data"
+
+inputs:
+  - id: fastq_fwd
+    type: "File[]"
+    description: "Forward read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: fastq_rev
+    type: "File[]"
+    description: "Reverse read FASTQ files (one per sample)"
+    required: true
+    resolve_from:
+      - local_path
+      - sra_accession
+
+  - id: sample_ids
+    type: "string[]"
+    description: "Sample identifiers (same order as FASTQ files)"
+    required: true
+
+  - id: genome_fasta
+    type: File
+    description: "Reference genome FASTA"
+    required: true
+    resolve_from:
+      - local_path
+
+  - id: bowtie2_index_files
+    type: "File[]"
+    description: "Bowtie2 index files"
+    required: true
+    resolve_from:
+      - local_path
+
+  - id: bowtie2_index_base
+    type: string
+    description: "Bowtie2 index base name"
+    required: true
+
+  - id: genome_size
+    type: string
+    description: "Effective genome size for MACS2 (hs, mm, or number)"
+    required: true
+
+  - id: peak_type
+    type: string
+    description: "Peak type: narrow or broad"
+    required: false
+    default: narrow
+    options: [narrow, broad]
+
+outputs:
+  - id: peaks
+    type: "File[]"
+    description: "MACS2 peak files"
+
+  - id: bigwigs
+    type: "File[]"
+    description: "Normalized bigWig coverage tracks"
+
+  - id: multiqc_report
+    type: File
+    description: "MultiQC HTML report"
+
+execution_plan:
+  steps:
+    - id: collect_samples
+      action: ask_user
+      description: "Ask for CUT&RUN FASTQ files and sample IDs"
+
+    - id: collect_reference
+      action: ask_user
+      description: "Ask for reference genome and Bowtie2 index"
+
+    - id: configure_peaks
+      action: ask_user
+      description: "Ask for peak calling mode (narrow/broad) and genome size"
+
+    - id: resolve_data
+      action: resolve_input
+      description: "Resolve FASTQ and reference paths"
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit cutandrun workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/cutandrun/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status"
+
+    - id: collect_outputs
+      action: retrieve_outputs
+      description: "Retrieve peaks, bigWigs, and MultiQC report"
+
+    - id: report
+      action: report_to_user
+      description: "Report completion with peak counts and QC summary"
+
+hints: |
+  - CUT&RUN: use narrow peaks for TF binding, broad for histone marks
+  - CUT&TAG: similar to CUT&RUN but uses Tn5 tagmentation
+  - IgG control: recommended but not required for peak calling
+  - MACS2 runs with --nomodel (suitable for CUT&RUN fragment distributions)
+  - Effective genome sizes: hs=2.7e9, mm=1.87e9, dm=1.2e8
+  - Planned v1.1: SEACR peak calling, spike-in normalization, fragment size QC
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 16
+    min_cores: 8
+    estimated_storage_gb: 50

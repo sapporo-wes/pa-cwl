@@ -28,6 +28,10 @@ requirements:
             -2 "$(inputs.fastq_rev.path)" \
             --threads $THREADS \
             --very-sensitive \
+            --rg-id \${PREFIX} \
+            --rg SM:\${PREFIX} \
+            --rg PL:ILLUMINA \
+            --rg LB:\${PREFIX} \
             2> \${PREFIX}_bowtie2.log \
           | samtools sort -@ $THREADS -o \${PREFIX}.sorted.bam -
 
@@ -35,7 +39,7 @@ requirements:
 
 hints:
   DockerRequirement:
-    dockerPull: "quay.io/biocontainers/mulled-v2-ac74a7f02cebcfcc07d8e8d1d750af9c83b4d45a:f70b31a2db15c023d641c32f074571571c834571-0"
+    dockerPull: "quay.io/biocontainers/mulled-v2-ac74a7f02cebcfcc07d8e8d1d750af9c83b4d45a:1744f68fe955578c63054b55309e05b41c37a80d-0"
 
 baseCommand: [bash, run_bowtie2.sh]
 
