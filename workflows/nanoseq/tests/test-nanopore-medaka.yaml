@@ -1,0 +1,12 @@
+# Test input: Nanopore with medaka variant calling
+fastq:
+  - class: File
+    path: ../../../test-data/nanopore/sample1_nanopore.fastq.gz
+sample_ids:
+  - sample1
+reference:
+  class: File
+  path: ../../../test-data/nanopore/reference.fasta
+minimap2_preset: map-ont
+call_variants: true
+medaka_model: "r1041_e82_400bps_sup_variant_v4.3.0"

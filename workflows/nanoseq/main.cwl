@@ -5,7 +5,8 @@ class: Workflow
 label: "nanoseq - Nanopore sequencing analysis pipeline"
 doc: |
   Long-read sequencing analysis pipeline for Oxford Nanopore data.
-  QC with NanoPlot, alignment with minimap2, and aggregated reporting with MultiQC.
+  QC with NanoPlot, alignment with minimap2, optional variant calling
+  with medaka, and aggregated reporting with MultiQC.
 
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
@@ -36,6 +37,17 @@ inputs:
     type: string?
     default: map-ont
     doc: "minimap2 preset: map-ont (DNA), splice (RNA), map-pb (PacBio CLR), map-hifi"
+
+  # === Variant calling ===
+  call_variants:
+    type: boolean?
+    default: false
+    doc: "Run medaka variant calling (haploid SNP/indel calling)"
+
+  medaka_model:
+    type: string?
+    default: "r1041_e82_400bps_sup_variant_v4.3.0"
+    doc: "Medaka model for variant calling"
 
 steps:
   # =====================
@@ -99,6 +111,20 @@ steps:
     out: [stats]
 
   # =====================
+  # Medaka variant calling (conditional)
+  # =====================
+  variant_calling:
+    run: steps/variant-calling.cwl
+    when: $(inputs.call_variants == true)
+    in:
+      bams: samtools_sort/sorted_bam
+      reference: reference
+      sample_ids: sample_ids
+      model: medaka_model
+      call_variants: call_variants
+    out: [vcfs, stats]
+
+  # =====================
   # MultiQC reporting
   # =====================
   multiqc:
@@ -109,6 +135,7 @@ steps:
           - fastqc/zip_report
           - nanoplot/stats_txt
           - samtools_stats/stats
+          - variant_calling/stats
         linkMerge: merge_flattened
         pickValue: all_non_null
       title:
@@ -140,3 +167,13 @@ outputs:
     type: File
     outputSource: multiqc/html_report
     doc: "MultiQC HTML report"
+
+  variant_vcfs:
+    type: File[]?
+    outputSource: variant_calling/vcfs
+    doc: "Medaka variant VCF files per sample (when call_variants=true)"
+
+  bcftools_stats_reports:
+    type: File[]?
+    outputSource: variant_calling/stats
+    doc: "bcftools stats on variant VCFs (when call_variants=true)"
