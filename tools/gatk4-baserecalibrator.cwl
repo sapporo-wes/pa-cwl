@@ -37,6 +37,8 @@ inputs:
 
   known_sites:
     type: File[]
+    secondaryFiles:
+      - .tbi
     doc: "Known variant sites VCFs (dbSNP, known indels, etc.)"
     inputBinding:
       prefix: --known-sites

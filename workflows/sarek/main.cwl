@@ -67,6 +67,13 @@ inputs:
     default: false
     doc: "Emit per-sample gVCF for downstream joint calling"
 
+  # === BQSR (optional) ===
+  known_sites:
+    type: File[]?
+    secondaryFiles:
+      - .tbi
+    doc: "Known variant sites VCFs for BQSR (dbSNP, Mills indels). BQSR is skipped if not provided."
+
   # === Tool options ===
   trimmer:
     type:
@@ -141,16 +148,59 @@ steps:
     out: [stats]
 
   # =====================
+  # BQSR (conditional — skipped when known_sites not provided)
+  # =====================
+  bqsr:
+    run: steps/bqsr.cwl
+    when: $(inputs.known_sites != null && inputs.known_sites.length > 0)
+    scatter: [bam, sample_id]
+    scatterMethod: dotproduct
+    in:
+      bam: align/aligned_bam
+      reference: prepare_reference/reference
+      known_sites: known_sites
+      intervals: intervals
+      sample_id: sample_ids
+    out: [recalibrated_bam, recalibration_table]
+
+  # =====================
+  # Select BAM (BQSR-recalibrated or original)
+  # =====================
+  select_bam:
+    run:
+      class: ExpressionTool
+      requirements:
+        InlineJavascriptRequirement: {}
+      inputs:
+        bqsr_bams:
+          type: Any
+        align_bams:
+          type: File[]
+      outputs:
+        bams:
+          type: File[]
+      expression: |
+        ${
+          var bqsr = inputs.bqsr_bams;
+          if (bqsr !== null && Array.isArray(bqsr) && bqsr.length > 0 && bqsr[0] !== null) {
+            return {bams: bqsr};
+          }
+          return {bams: inputs.align_bams};
+        }
+    in:
+      bqsr_bams: bqsr/recalibrated_bam
+      align_bams: align/aligned_bam
+    out: [bams]
+
+  # =====================
   # GATK HaplotypeCaller
-  # Note: BQSR (BaseRecalibrator + ApplyBQSR) planned for v1.1.
-  # For now, HaplotypeCaller runs on markdup BAMs directly.
   # =====================
   haplotypecaller:
     run: ../../tools/gatk4-haplotypecaller.cwl
     scatter: [bam, sample_id]
     scatterMethod: dotproduct
     in:
-      bam: align/aligned_bam
+      bam: select_bam/bams
       reference: prepare_reference/reference
       dbsnp: dbsnp
       intervals: intervals
@@ -195,6 +245,7 @@ steps:
           - qc_trim/fastp_json
           - align/markdup_metrics
           - samtools_stats/stats
+          - bqsr/recalibration_table
           - bcftools_stats/stats
         linkMerge: merge_flattened
         pickValue: all_non_null
