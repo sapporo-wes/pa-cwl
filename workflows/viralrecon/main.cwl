@@ -6,7 +6,8 @@ label: "viralrecon - Viral genome variant calling and consensus pipeline"
 doc: |
   Viral genome analysis pipeline for amplicon or whole-genome sequencing.
   Performs QC, trimming, alignment, optional primer trimming, variant
-  calling, and consensus sequence generation using iVar.
+  calling (iVar + optional bcftools), consensus generation, and
+  optional Pangolin lineage assignment.
 
   Designed for SARS-CoV-2 surveillance but works with any viral reference.
 
@@ -66,6 +67,16 @@ inputs:
     type: int?
     default: 10
     doc: "Minimum read depth for variant/consensus calling"
+
+  run_bcftools:
+    type: boolean?
+    default: false
+    doc: "Also call variants with bcftools mpileup+call (produces VCF output)"
+
+  run_pangolin:
+    type: boolean?
+    default: false
+    doc: "Run Pangolin lineage assignment on consensus sequences"
 
 steps:
   # =====================
@@ -179,6 +190,31 @@ steps:
     out: [consensus_fasta, consensus_qual]
 
   # =====================
+  # bcftools variant calling (conditional)
+  # =====================
+  bcftools_variants:
+    run: steps/bcftools-variant-calling.cwl
+    when: $(inputs.run_bcftools == true)
+    in:
+      bams: sort_trimmed/sorted_bam
+      reference: samtools_faidx/indexed_fasta
+      sample_ids: sample_ids
+      run_bcftools: run_bcftools
+    out: [vcfs, stats]
+
+  # =====================
+  # Pangolin lineage assignment (conditional)
+  # =====================
+  pangolin_lineage:
+    run: steps/pangolin-lineage.cwl
+    when: $(inputs.run_pangolin == true)
+    in:
+      consensus_fastas: ivar_consensus/consensus_fasta
+      sample_ids: sample_ids
+      run_pangolin: run_pangolin
+    out: [lineage_reports]
+
+  # =====================
   # Alignment stats (per sample)
   # =====================
   samtools_stats:
@@ -202,6 +238,7 @@ steps:
           - qc_trim/fastp_json
           - align/markdup_metrics
           - samtools_stats/stats
+          - bcftools_variants/stats
         linkMerge: merge_flattened
         pickValue: all_non_null
       title:
@@ -223,6 +260,16 @@ outputs:
     type: File[]
     outputSource: sort_trimmed/sorted_bam
     doc: "Sorted BAM files (primer-trimmed if amplicon mode)"
+
+  bcftools_vcfs:
+    type: File[]?
+    outputSource: bcftools_variants/vcfs
+    doc: "bcftools variant calls in VCF format (when run_bcftools=true)"
+
+  pangolin_reports:
+    type: File[]?
+    outputSource: pangolin_lineage/lineage_reports
+    doc: "Pangolin lineage assignment reports (when run_pangolin=true)"
 
   multiqc_report:
     type: File

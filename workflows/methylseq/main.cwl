@@ -4,9 +4,9 @@ class: Workflow
 
 label: "methylseq - Bisulfite sequencing methylation pipeline"
 doc: |
-  Bisulfite sequencing (BS-seq) pipeline using Bismark. Performs QC,
-  trimming, bisulfite-aware alignment, deduplication, and per-base
-  methylation extraction (CpG bedGraph + coverage + cytosine report).
+  Bisulfite sequencing (BS-seq) pipeline with Bismark or bwa-meth aligner.
+  Performs QC, trimming, bisulfite-aware alignment, deduplication, and
+  per-base methylation extraction.
 
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
@@ -49,18 +49,13 @@ inputs:
     default: trim_galore
     doc: "Read trimming tool (trim_galore is standard for bisulfite)"
 
-steps:
-  # =====================
-  # Bismark genome preparation (conditional)
-  # =====================
-  build_bismark_index:
-    run: ../../tools/bismark-genome-preparation.cwl
-    when: $(inputs.bismark_index == null)
-    in:
-      genome_fasta: genome_fasta
-      bismark_index: bismark_index
-    out: [bismark_index_dir]
+  # === Aligner ===
+  aligner:
+    type: string
+    default: bismark
+    doc: "Alignment method: bismark (default) or bwameth (bwa-meth + MethylDackel)"
 
+steps:
   # =====================
   # QC + Trimming
   # =====================
@@ -76,59 +71,85 @@ steps:
     out: [trimmed_fwd, trimmed_rev, fastqc_raw_zip, fastp_json]
 
   # =====================
-  # Bismark alignment
+  # Bismark path (conditional)
   # =====================
-  bismark_align:
-    run: ../../tools/bismark-align.cwl
-    scatter: [fastq_fwd, fastq_rev, sample_id]
-    scatterMethod: dotproduct
+  bismark_path:
+    run: steps/align-bismark.cwl
+    when: $(inputs.aligner == "bismark")
     in:
-      genome_dir:
-        source:
-          - bismark_index
-          - build_bismark_index/bismark_index_dir
-        pickValue: first_non_null
+      genome_fasta: genome_fasta
+      bismark_index: bismark_index
       fastq_fwd: qc_trim/trimmed_fwd
       fastq_rev: qc_trim/trimmed_rev
-      sample_id: sample_ids
-    out: [aligned_bam, report]
+      sample_ids: sample_ids
+      aligner: aligner
+    out: [sorted_bams, bedgraphs, alignment_reports, dedup_reports,
+          mbias_reports, splitting_reports, coverage_files, cytosine_reports]
 
   # =====================
-  # Bismark deduplication
+  # bwa-meth path (conditional)
   # =====================
-  bismark_dedup:
-    run: ../../tools/bismark-deduplicate.cwl
-    scatter: bam
+  bwameth_path:
+    run: steps/align-bwameth.cwl
+    when: $(inputs.aligner == "bwameth")
     in:
-      bam: bismark_align/aligned_bam
-    out: [deduplicated_bam, dedup_report]
+      genome_fasta: genome_fasta
+      fastq_fwd: qc_trim/trimmed_fwd
+      fastq_rev: qc_trim/trimmed_rev
+      sample_ids: sample_ids
+      aligner: aligner
+    out: [sorted_bams, bedgraphs, markdup_metrics]
 
   # =====================
-  # Sort + Index
+  # Select outputs (bismark or bwa-meth)
   # =====================
-  samtools_sort:
-    run: ../../tools/samtools-sort-index.cwl
-    scatter: [bam, sample_id]
-    scatterMethod: dotproduct
+  select_outputs:
+    run:
+      class: ExpressionTool
+      requirements:
+        InlineJavascriptRequirement: {}
+      inputs:
+        bismark_bams:
+          type:
+            - "null"
+            - type: array
+              items: File
+        bwameth_bams:
+          type:
+            - "null"
+            - type: array
+              items: File
+        bismark_bedgraphs:
+          type:
+            - "null"
+            - type: array
+              items: File
+        bwameth_bedgraphs:
+          type:
+            - "null"
+            - type: array
+              items: File
+      outputs:
+        bams:
+          type: File[]
+        bedgraphs:
+          type: File[]
+      expression: |
+        ${
+          var bams = inputs.bismark_bams;
+          var bedgraphs = inputs.bismark_bedgraphs;
+          if (bams === null || (Array.isArray(bams) && bams.length > 0 && bams[0] === null)) {
+            bams = inputs.bwameth_bams;
+            bedgraphs = inputs.bwameth_bedgraphs;
+          }
+          return {bams: bams, bedgraphs: bedgraphs};
+        }
     in:
-      bam: bismark_dedup/deduplicated_bam
-      sample_id: sample_ids
-    out: [sorted_bam]
-
-  # =====================
-  # Methylation extraction
-  # =====================
-  methylation_extractor:
-    run: ../../tools/bismark-methylation-extractor.cwl
-    scatter: bam
-    in:
-      bam: bismark_dedup/deduplicated_bam
-      genome_dir:
-        source:
-          - bismark_index
-          - build_bismark_index/bismark_index_dir
-        pickValue: first_non_null
-    out: [bedgraph, coverage, cytosine_report, mbias, splitting_report]
+      bismark_bams: bismark_path/sorted_bams
+      bwameth_bams: bwameth_path/sorted_bams
+      bismark_bedgraphs: bismark_path/bedgraphs
+      bwameth_bedgraphs: bwameth_path/bedgraphs
+    out: [bams, bedgraphs]
 
   # =====================
   # MultiQC reporting
@@ -139,10 +160,10 @@ steps:
       report_files:
         source:
           - qc_trim/fastqc_raw_zip
-          - bismark_align/report
-          - bismark_dedup/dedup_report
-          - methylation_extractor/mbias
-          - methylation_extractor/splitting_report
+          - bismark_path/alignment_reports
+          - bismark_path/dedup_reports
+          - bismark_path/mbias_reports
+          - bismark_path/splitting_reports
         linkMerge: merge_flattened
         pickValue: all_non_null
       title:
@@ -152,34 +173,23 @@ steps:
 outputs:
   sorted_bams:
     type: File[]
-    outputSource: samtools_sort/sorted_bam
+    outputSource: select_outputs/bams
     doc: "Sorted, deduplicated BAM files"
 
   bedgraphs:
     type: File[]
-    outputSource: methylation_extractor/bedgraph
+    outputSource: select_outputs/bedgraphs
     doc: "Methylation bedGraph files per sample"
 
   coverage_files:
-    type: File[]
-    outputSource: methylation_extractor/coverage
-    doc: "Bismark coverage files per sample"
+    type: File[]?
+    outputSource: bismark_path/coverage_files
+    doc: "Bismark coverage files per sample (Bismark path only)"
 
   cytosine_reports:
     type: File[]?
-    outputSource: methylation_extractor/cytosine_report
-    pickValue: all_non_null
-    doc: "Genome-wide cytosine reports"
-
-  mbias_reports:
-    type: File[]
-    outputSource: methylation_extractor/mbias
-    doc: "M-bias reports per sample"
-
-  bismark_alignment_reports:
-    type: File[]
-    outputSource: bismark_align/report
-    doc: "Bismark alignment reports"
+    outputSource: bismark_path/cytosine_reports
+    doc: "Genome-wide cytosine reports (Bismark path only)"
 
   multiqc_report:
     type: File
