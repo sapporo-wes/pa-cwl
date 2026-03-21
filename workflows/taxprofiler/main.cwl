@@ -5,7 +5,8 @@ class: Workflow
 label: "taxprofiler - Taxonomic profiling pipeline"
 doc: |
   Taxonomic classification and abundance estimation pipeline.
-  Uses Kraken2 for classification and Bracken for abundance re-estimation.
+  Uses Kraken2 for classification and Bracken for abundance re-estimation,
+  with optional MetaPhlAn marker-gene profiling.
 
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
@@ -45,6 +46,15 @@ inputs:
     type: string?
     default: S
     doc: "Taxonomic level for Bracken (S=species, G=genus, etc.)"
+
+  # === MetaPhlAn (optional) ===
+  metaphlan_db:
+    type: Directory?
+    doc: "MetaPhlAn database directory. MetaPhlAn is skipped if not provided."
+
+  metaphlan_index:
+    type: string?
+    doc: "MetaPhlAn database index name (default: latest in db dir)"
 
 steps:
   # =====================
@@ -100,6 +110,22 @@ steps:
     out: [abundance, adjusted_report]
 
   # =====================
+  # MetaPhlAn profiling (conditional — runs when metaphlan_db provided)
+  # =====================
+  metaphlan:
+    run: ../../tools/metaphlan.cwl
+    when: $(inputs.database != null)
+    scatter: [fastq_fwd, fastq_rev, prefix]
+    scatterMethod: dotproduct
+    in:
+      fastq_fwd: fastp/trimmed_fwd
+      fastq_rev: fastp/trimmed_rev
+      database: metaphlan_db
+      database_index: metaphlan_index
+      prefix: sample_ids
+    out: [profile, sam]
+
+  # =====================
   # MultiQC reporting
   # =====================
   multiqc:
@@ -110,6 +136,7 @@ steps:
           - fastqc/zip_report
           - fastp/json_report
           - kraken2/report
+          - metaphlan/profile
         linkMerge: merge_flattened
         pickValue: all_non_null
       title:
@@ -126,6 +153,11 @@ outputs:
     type: File[]
     outputSource: bracken/abundance
     doc: "Bracken abundance estimates"
+
+  metaphlan_profiles:
+    type: File[]?
+    outputSource: metaphlan/profile
+    doc: "MetaPhlAn taxonomic profiles (when metaphlan_db provided)"
 
   multiqc_report:
     type: File
