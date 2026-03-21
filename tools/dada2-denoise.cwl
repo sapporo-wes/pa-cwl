@@ -5,8 +5,9 @@ class: CommandLineTool
 label: "DADA2 denoise - Amplicon sequence variant inference"
 doc: |
   Run the full DADA2 pipeline: quality filtering, error learning,
-  denoising, pair merging, chimera removal. Outputs an ASV count
-  table and representative sequences FASTA.
+  denoising, pair merging (PE only), chimera removal. Outputs an ASV
+  count table and representative sequences FASTA.
+  Supports both paired-end and single-end amplicon data.
 
 requirements:
   ResourceRequirement:
@@ -20,7 +21,11 @@ requirements:
           #!/usr/bin/env Rscript
           args <- commandArgs(trailingOnly = TRUE)
           fwd_files <- strsplit(args[1], ",")[[1]]
-          rev_files <- strsplit(args[2], ",")[[1]]
+          rev_arg <- args[2]
+          paired <- nchar(rev_arg) > 0
+          if (paired) {
+            rev_files <- strsplit(rev_arg, ",")[[1]]
+          }
           sample_ids <- strsplit(args[3], ",")[[1]]
           trunc_len_f <- as.integer(args[4])
           trunc_len_r <- as.integer(args[5])
@@ -31,22 +36,33 @@ requirements:
 
           # Filter and trim
           filt_fwd <- file.path("filtered", paste0(sample_ids, "_F_filt.fastq.gz"))
-          filt_rev <- file.path("filtered", paste0(sample_ids, "_R_filt.fastq.gz"))
           dir.create("filtered", showWarnings = FALSE)
 
-          filt_out <- filterAndTrim(
-            fwd_files, filt_fwd,
-            rev_files, filt_rev,
-            truncLen = c(trunc_len_f, trunc_len_r),
-            minLen = min_len,
-            maxN = 0, maxEE = c(2, 2), truncQ = 2,
-            rm.phix = TRUE, compress = TRUE, multithread = threads
-          )
+          if (paired) {
+            filt_rev <- file.path("filtered", paste0(sample_ids, "_R_filt.fastq.gz"))
+            filt_out <- filterAndTrim(
+              fwd_files, filt_fwd,
+              rev_files, filt_rev,
+              truncLen = c(trunc_len_f, trunc_len_r),
+              minLen = min_len,
+              maxN = 0, maxEE = c(2, 2), truncQ = 2,
+              rm.phix = TRUE, compress = TRUE, multithread = threads
+            )
+          } else {
+            trunc_vec <- if (trunc_len_f > 0) trunc_len_f else 0
+            filt_out <- filterAndTrim(
+              fwd_files, filt_fwd,
+              truncLen = trunc_vec,
+              minLen = min_len,
+              maxN = 0, maxEE = 2, truncQ = 2,
+              rm.phix = TRUE, compress = TRUE, multithread = threads
+            )
+          }
 
           # Check which samples passed filtering
           keep <- filt_out[, "reads.out"] > 0
           filt_fwd <- filt_fwd[keep]
-          filt_rev <- filt_rev[keep]
+          if (paired) filt_rev <- filt_rev[keep]
           sample_ids <- sample_ids[keep]
 
           if (length(filt_fwd) == 0) {
@@ -54,21 +70,27 @@ requirements:
           }
 
           # Learn error rates
-          cat("Learning error rates...\n")
+          cat("Learning error rates (forward)...\n")
           errF <- learnErrors(filt_fwd, multithread = threads)
-          errR <- learnErrors(filt_rev, multithread = threads)
 
-          # Denoise
-          cat("Denoising...\n")
+          # Denoise forward
+          cat("Denoising forward reads...\n")
           dadaFs <- dada(filt_fwd, err = errF, multithread = threads)
-          dadaRs <- dada(filt_rev, err = errR, multithread = threads)
 
-          # Merge pairs
-          cat("Merging pairs...\n")
-          merged <- mergePairs(dadaFs, filt_fwd, dadaRs, filt_rev)
+          if (paired) {
+            cat("Learning error rates (reverse)...\n")
+            errR <- learnErrors(filt_rev, multithread = threads)
+            cat("Denoising reverse reads...\n")
+            dadaRs <- dada(filt_rev, err = errR, multithread = threads)
 
-          # Make sequence table
-          seqtab <- makeSequenceTable(merged)
+            # Merge pairs
+            cat("Merging pairs...\n")
+            merged <- mergePairs(dadaFs, filt_fwd, dadaRs, filt_rev)
+            seqtab <- makeSequenceTable(merged)
+          } else {
+            # Single-end: sequence table from forward reads only
+            seqtab <- makeSequenceTable(dadaFs)
+          }
 
           # Remove chimeras
           cat("Removing chimeras...\n")
@@ -112,8 +134,8 @@ inputs:
     doc: "Trimmed forward read FASTQ files (all samples)"
 
   fastq_rev:
-    type: File[]
-    doc: "Trimmed reverse read FASTQ files (all samples)"
+    type: File[]?
+    doc: "Trimmed reverse read FASTQ files (all samples, omit for single-end)"
 
   sample_ids:
     type: string[]
@@ -143,7 +165,10 @@ arguments:
   - position: 2
     valueFrom: |
       ${
-        return inputs.fastq_rev.map(function(f) { return f.path; }).join(",");
+        if (inputs.fastq_rev) {
+          return inputs.fastq_rev.map(function(f) { return f.path; }).join(",");
+        }
+        return "";
       }
   - position: 3
     valueFrom: |

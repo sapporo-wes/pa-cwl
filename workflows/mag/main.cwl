@@ -5,8 +5,9 @@ class: Workflow
 label: "mag - Metagenome-Assembled Genomes pipeline"
 doc: |
   Metagenome assembly and binning pipeline. Performs QC, trimming,
-  assembly with MEGAHIT, contig binning with MetaBAT2, gene prediction
-  with Prodigal, and assembly quality assessment with QUAST.
+  assembly with MEGAHIT, contig binning with MetaBAT2, optional bin
+  refinement with DAS Tool, optional bin quality assessment with BUSCO,
+  gene prediction with Prodigal, and assembly quality assessment with QUAST.
 
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
@@ -36,6 +37,16 @@ inputs:
     type: int?
     default: 1000
     doc: "Minimum contig length for assembly output"
+
+  # === Post-binning options ===
+  run_das_tool:
+    type: boolean?
+    default: false
+    doc: "Run DAS Tool for bin refinement"
+
+  busco_lineage:
+    type: string?
+    doc: "BUSCO lineage dataset for bin QC (e.g., bacteria_odb10). Omit to skip BUSCO."
 
 steps:
   # =====================
@@ -116,6 +127,64 @@ steps:
     out: [bins, depth_file, bin_summary]
 
   # =====================
+  # DAS Tool bin refinement (conditional)
+  # =====================
+  das_tool:
+    run: ../../tools/das-tool.cwl
+    when: $(inputs.run_das_tool == true)
+    in:
+      contigs: assembly/contigs
+      bins: metabat2/bins
+      sample_id:
+        default: "das_tool"
+      run_das_tool: run_das_tool
+    out: [refined_bins, summary, log]
+
+  # =====================
+  # Select bins (refined or original)
+  # =====================
+  select_bins:
+    run:
+      class: ExpressionTool
+      requirements:
+        InlineJavascriptRequirement: {}
+      inputs:
+        das_tool_bins:
+          type:
+            - "null"
+            - type: array
+              items: File
+        metabat2_bins:
+          type: File[]
+      outputs:
+        bins:
+          type: File[]
+      expression: |
+        ${
+          var bins = inputs.das_tool_bins;
+          if (bins !== null && Array.isArray(bins) && bins.length > 0 && bins[0] !== null) {
+            return {bins: bins};
+          }
+          return {bins: inputs.metabat2_bins};
+        }
+    in:
+      das_tool_bins: das_tool/refined_bins
+      metabat2_bins: metabat2/bins
+    out: [bins]
+
+  # =====================
+  # BUSCO bin quality assessment (conditional)
+  # =====================
+  busco_qc:
+    run: steps/busco-bins.cwl
+    when: $(inputs.busco_lineage != null)
+    in:
+      bins: select_bins/bins
+      lineage: busco_lineage
+      busco_lineage: busco_lineage
+    out: [summaries]
+
+  # =====================
   # Gene prediction with Prodigal
   # =====================
   prodigal:
@@ -158,6 +227,21 @@ outputs:
     type: File
     outputSource: metabat2/bin_summary
     doc: "Bin summary statistics"
+
+  refined_bins:
+    type: File[]?
+    outputSource: das_tool/refined_bins
+    doc: "DAS Tool refined genome bins (when run_das_tool=true)"
+
+  das_tool_summary:
+    type: File?
+    outputSource: das_tool/summary
+    doc: "DAS Tool bin scoring summary (when run_das_tool=true)"
+
+  busco_summaries:
+    type: File[]?
+    outputSource: busco_qc/summaries
+    doc: "BUSCO completeness summaries per bin (when busco_lineage is set)"
 
   gene_annotations:
     type: File

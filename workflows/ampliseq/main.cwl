@@ -7,7 +7,7 @@ doc: |
   Amplicon sequencing analysis pipeline using Cutadapt and DADA2.
   Performs QC, primer trimming, ASV inference, and taxonomy assignment.
 
-  Supports paired-end 16S, ITS, and 18S amplicon data.
+  Supports paired-end and single-end 16S, ITS, and 18S amplicon data.
 
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
@@ -25,8 +25,8 @@ inputs:
     doc: "Forward read FASTQ files (one per sample)"
 
   fastq_rev:
-    type: File[]
-    doc: "Reverse read FASTQ files (one per sample)"
+    type: File[]?
+    doc: "Reverse read FASTQ files (one per sample, omit for single-end)"
 
   sample_ids:
     type: string[]
@@ -38,8 +38,8 @@ inputs:
     doc: "Forward primer sequence (e.g., 515F: GTGYCAGCMGCCGCGGTAA)"
 
   primer_rev:
-    type: string
-    doc: "Reverse primer sequence (e.g., 806R: GGACTACNVGGGTWTCTAAT)"
+    type: string?
+    doc: "Reverse primer sequence (e.g., 806R: GGACTACNVGGGTWTCTAAT, omit for single-end)"
 
   # === Reference database ===
   taxonomy_db:
@@ -69,6 +69,40 @@ steps:
     out: [html_report, zip_report]
 
   # =====================
+  # Prepare reverse reads for scatter (null -> array of nulls for SE)
+  # =====================
+  prepare_rev:
+    run:
+      class: ExpressionTool
+      requirements:
+        InlineJavascriptRequirement: {}
+      inputs:
+        fastq_fwd:
+          type: File[]
+        fastq_rev:
+          type: File[]?
+      outputs:
+        rev_files:
+          type:
+            type: array
+            items: ["null", File]
+      expression: |
+        ${
+          if (inputs.fastq_rev !== null) {
+            return {rev_files: inputs.fastq_rev};
+          }
+          var nulls = [];
+          for (var i = 0; i < inputs.fastq_fwd.length; i++) {
+            nulls.push(null);
+          }
+          return {rev_files: nulls};
+        }
+    in:
+      fastq_fwd: fastq_fwd
+      fastq_rev: fastq_rev
+    out: [rev_files]
+
+  # =====================
   # Primer trimming with Cutadapt (per sample)
   # =====================
   cutadapt:
@@ -77,15 +111,50 @@ steps:
     scatterMethod: dotproduct
     in:
       fastq_fwd: fastq_fwd
-      fastq_rev: fastq_rev
+      fastq_rev: prepare_rev/rev_files
       adapter_fwd:
         source: primer_fwd
         valueFrom: "^$(self)"
       adapter_rev:
         source: primer_rev
-        valueFrom: "^$(self)"
+        valueFrom: |
+          ${
+            if (self) return "^" + self;
+            return null;
+          }
       prefix: sample_ids
     out: [trimmed_fwd, trimmed_rev, stdout_log]
+
+  # =====================
+  # Collect non-null trimmed reverse reads for DADA2
+  # =====================
+  collect_rev:
+    run:
+      class: ExpressionTool
+      requirements:
+        InlineJavascriptRequirement: {}
+      inputs:
+        rev_files:
+          type:
+            type: array
+            items: ["null", File]
+      outputs:
+        fastq_rev:
+          type: File[]?
+      expression: |
+        ${
+          var files = [];
+          for (var i = 0; i < inputs.rev_files.length; i++) {
+            if (inputs.rev_files[i] !== null) {
+              files.push(inputs.rev_files[i]);
+            }
+          }
+          if (files.length === 0) return {fastq_rev: null};
+          return {fastq_rev: files};
+        }
+    in:
+      rev_files: cutadapt/trimmed_rev
+    out: [fastq_rev]
 
   # =====================
   # DADA2 denoising (all samples together)
@@ -94,7 +163,7 @@ steps:
     run: ../../tools/dada2-denoise.cwl
     in:
       fastq_fwd: cutadapt/trimmed_fwd
-      fastq_rev: cutadapt/trimmed_rev
+      fastq_rev: collect_rev/fastq_rev
       sample_ids: sample_ids
       trunc_len_fwd: trunc_len_fwd
       trunc_len_rev: trunc_len_rev

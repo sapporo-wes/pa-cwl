@@ -7,6 +7,7 @@ doc: |
   CUT&RUN and CUT&TAG analysis pipeline. Uses Bowtie2 alignment,
   MACS2 peak calling (--nomodel), and bigWig coverage track generation.
   Supports optional IgG control for background subtraction.
+  Optional SEACR peak calling for CUT&RUN-optimized analysis.
 
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
@@ -70,6 +71,26 @@ inputs:
       symbols: [narrow, broad]
     default: narrow
     doc: "Peak type: narrow (TFs, CUT&RUN) or broad (histone marks)"
+
+  # === SEACR options ===
+  run_seacr:
+    type: boolean?
+    default: false
+    doc: "Also run SEACR peak calling (CUT&RUN-optimized peak caller)"
+
+  seacr_mode:
+    type: string?
+    default: "stringent"
+    doc: "SEACR peak calling stringency: stringent or relaxed"
+
+  seacr_threshold:
+    type: float?
+    default: 0.01
+    doc: "SEACR numeric threshold (0-1) when no IgG control is used"
+
+  seacr_control_bedgraph:
+    type: File?
+    doc: "Pre-generated IgG control bedGraph for SEACR (optional, uses threshold if omitted)"
 
 steps:
   # =====================
@@ -163,6 +184,21 @@ steps:
     out: [narrow_peaks, broad_peaks, summits, xls, treat_pileup, control_lambda]
 
   # =====================
+  # SEACR peak calling (conditional)
+  # =====================
+  seacr_peaks:
+    run: steps/seacr-peaks.cwl
+    when: $(inputs.run_seacr == true)
+    in:
+      bams: index_filtered/indexed_bam
+      sample_ids: sample_ids
+      control_bedgraph: seacr_control_bedgraph
+      seacr_mode: seacr_mode
+      seacr_threshold: seacr_threshold
+      run_seacr: run_seacr
+    out: [peaks, bedgraphs]
+
+  # =====================
   # BigWig generation (per treatment sample)
   # =====================
   bamcoverage:
@@ -211,6 +247,11 @@ outputs:
     type: File[]
     outputSource: index_filtered/indexed_bam
     doc: "Filtered, deduplicated BAM files"
+
+  seacr_peak_files:
+    type: File[]?
+    outputSource: seacr_peaks/peaks
+    doc: "SEACR peak calls in BED format (when run_seacr=true)"
 
   multiqc_report:
     type: File
