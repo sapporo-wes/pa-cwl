@@ -6,11 +6,8 @@ label: "sarek - Germline variant calling pipeline"
 doc: |
   Germline variant calling pipeline based on GATK best practices.
   Performs QC, trimming, BWA-MEM2 alignment, duplicate marking,
-  optional BQSR, GATK HaplotypeCaller, hard filtering, and QC reporting.
-
-  v1.0 scope: Single-sample germline calling with HaplotypeCaller.
-  Joint calling, somatic calling (Mutect2), and annotation (VEP/snpEff)
-  are planned for future versions.
+  optional BQSR, GATK HaplotypeCaller, optional joint calling
+  (GenomicsDBImport + GenotypeGVCFs), hard filtering, and QC reporting.
 
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
@@ -65,7 +62,12 @@ inputs:
   emit_gvcf:
     type: boolean?
     default: false
-    doc: "Emit per-sample gVCF for downstream joint calling"
+    doc: "Emit per-sample gVCF and run joint calling via GenomicsDBImport + GenotypeGVCFs"
+
+  cohort_id:
+    type: string?
+    default: "cohort"
+    doc: "Cohort identifier for joint calling output naming (used when emit_gvcf=true)"
 
   # === BQSR (optional) ===
   known_sites:
@@ -209,7 +211,45 @@ steps:
     out: [vcf]
 
   # =====================
-  # Hard filtering
+  # Joint calling (conditional — runs when emit_gvcf=true)
+  # =====================
+  joint_calling:
+    run: steps/joint-calling.cwl
+    when: $(inputs.emit_gvcf == true)
+    in:
+      gvcfs: haplotypecaller/vcf
+      reference: prepare_reference/reference
+      dbsnp: dbsnp
+      intervals: intervals
+      cohort_id: cohort_id
+      emit_gvcf: emit_gvcf
+    out: [joint_vcf]
+
+  # =====================
+  # Joint VCF hard filtering (conditional)
+  # =====================
+  joint_variant_filtration:
+    run: ../../tools/gatk4-variantfiltration.cwl
+    when: $(inputs.vcf != null)
+    in:
+      vcf: joint_calling/joint_vcf
+      reference: prepare_reference/reference
+      sample_id: cohort_id
+    out: [filtered_vcf]
+
+  # =====================
+  # Joint VCF QC (conditional)
+  # =====================
+  joint_bcftools_stats:
+    run: ../../tools/bcftools-stats.cwl
+    when: $(inputs.vcf != null)
+    in:
+      vcf: joint_variant_filtration/filtered_vcf
+      sample_id: cohort_id
+    out: [stats]
+
+  # =====================
+  # Hard filtering (per-sample)
   # =====================
   variant_filtration:
     run: ../../tools/gatk4-variantfiltration.cwl
@@ -247,6 +287,7 @@ steps:
           - samtools_stats/stats
           - bqsr/recalibration_table
           - bcftools_stats/stats
+          - joint_bcftools_stats/stats
         linkMerge: merge_flattened
         pickValue: all_non_null
       title:
@@ -283,3 +324,13 @@ outputs:
     type: File[]
     outputSource: bcftools_stats/stats
     doc: "bcftools stats on filtered VCFs"
+
+  joint_vcf:
+    type: File?
+    outputSource: joint_calling/joint_vcf
+    doc: "Joint-called multi-sample VCF (when emit_gvcf=true)"
+
+  joint_filtered_vcf:
+    type: File?
+    outputSource: joint_variant_filtration/filtered_vcf
+    doc: "Filtered joint-called VCF (when emit_gvcf=true)"
