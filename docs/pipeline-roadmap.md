@@ -81,9 +81,9 @@ ChIP-seq analysis with QC, alignment, filtering, peak calling, and coverage trac
 
 ### sarek — Germline Variant Calling
 
-**Status: 1.1 — Germline HaplotypeCaller with BQSR, joint calling, and scatter-gather**
+**Status: 2.0 — Germline HaplotypeCaller + somatic Mutect2, optional VEP annotation**
 
-Germline variant calling with GATK best practices: alignment, dedup, optional BQSR, HaplotypeCaller with optional interval scatter, optional joint calling with GenomicsDBImport + GenotypeGVCFs, hard filtering.
+Germline and somatic variant calling with GATK best practices. Germline: HaplotypeCaller with optional BQSR, interval scatter, joint calling, hard filtering. Somatic: Mutect2 tumor-normal calling with orientation bias learning, contamination estimation, and FilterMutectCalls. Optional Ensembl VEP functional annotation in either mode.
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -100,8 +100,8 @@ Germline variant calling with GATK best practices: alignment, dedup, optional BQ
 | samtools stats | Done | Alignment QC for MultiQC |
 | bcftools stats | Done | VCF QC for MultiQC |
 | MultiQC | Done | Integrates FastQC, fastp, Picard, samtools, bcftools |
-| Somatic calling (Mutect2) | Planned v2.0 | Tumor-normal pairs |
-| Annotation (VEP/snpEff) | Planned v2.0 | Functional variant annotation |
+| Somatic calling (Mutect2) | Done v2.0 | Tumor-normal pairs with contamination estimation |
+| VEP annotation | Done v2.0 | Conditional Ensembl VEP in germline or somatic mode |
 | Scatter-gather (HaplotypeCaller) | Done v1.1 | Interval-based HaplotypeCaller scatter |
 
 **Tested pathway matrix:**
@@ -500,6 +500,8 @@ All v1.1 enhancements implemented. 44 features across 12 pipelines, adding alter
 | sarek | BQSR | **Done** | Base quality score recalibration (requires known sites VCFs) |
 | sarek | Joint calling | **Done** | GenomicsDBImport + GenotypeGVCFs for multi-sample cohorts |
 | sarek | Scatter-gather | **Done** | Interval-based HaplotypeCaller parallelization |
+| sarek | Mutect2 | **Done** | Somatic variant calling (tumor-normal pairs) |
+| sarek | VEP annotation | **Done** | Ensembl VEP functional variant annotation |
 | raredisease | DeepVariant | **Done** | Alternative SNV caller |
 | raredisease | Joint calling | **Done** | GenomicsDBImport + GenotypeGVCFs |
 | raredisease | SV calling (Manta) | **Done** | Structural variant detection |
@@ -559,12 +561,12 @@ All v1.1 enhancements implemented. 44 features across 12 pipelines, adding alter
 | nanoseq | medaka | **Done** | Short variant calling from Nanopore |
 | nanoseq | Sniffles2 | **Done** | Structural variant detection |
 
-### v2.0 (future)
+### v2.0 (Complete)
 
-| Pipeline | Feature | Description |
-|----------|---------|-------------|
-| sarek | Mutect2 | Somatic variant calling (tumor-normal pairs) |
-| sarek | VEP/snpEff | Functional variant annotation |
+| Pipeline | Feature | Status | Description |
+|----------|---------|--------|-------------|
+| sarek | Mutect2 | **Done** | Somatic variant calling (tumor-normal pairs) |
+| sarek | VEP annotation | **Done** | Ensembl VEP functional variant annotation |
 
 ---
 
@@ -607,7 +609,7 @@ All 16 pipelines completed in priority order, building tool reuse incrementally:
 
 ## Tool Reuse Matrix
 
-119 tools in `tools/`, shared across 16 pipelines. Core shared tools:
+124 tools in `tools/`, shared across 16 pipelines. Core shared tools:
 
 | Tool | Pipelines using it |
 |------|--------------------|
@@ -686,5 +688,11 @@ v1.1 tools added to reuse matrix:
 | fusioncatcher | rnafusion |
 | fusion-inspector | rnafusion |
 | arriba-visualization | rnafusion |
+| gatk4-mutect2 | sarek |
+| gatk4-getpileupsummaries | sarek |
+| gatk4-calculatecontamination | sarek |
+| gatk4-learnreadorientationmodel | sarek |
+| gatk4-filtermutectcalls | sarek |
+| ensembl-vep | sarek, raredisease |
 
 Pipeline-specific tools: STARsolo, Cutadapt, DADA2, SPAdes, MEGAHIT, MetaBAT2, Prodigal, QUAST, Kraken2, Bracken, minimap2, NanoPlot, Arriba, star-align-fusion, Ensembl VEP, iVar, Bismark, hic-mapping, pairtools, cooler, medaka, simpleaf, MetaPhlAn, bwa-meth, MethylDackel, Pangolin, SEACR, BUSCO, DAS Tool, NanoFilt, StringTie, Sniffles, STAR-Fusion, FusionCatcher, FusionInspector, Nextclade, Centrifuge, Krona, Taxpasta, DeepVariant, Manta, GENMOD, ExpansionHunter, Kallisto/BUStools, QIIME2.

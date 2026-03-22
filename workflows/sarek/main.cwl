@@ -2,12 +2,18 @@
 cwlVersion: v1.2
 class: Workflow
 
-label: "sarek - Germline variant calling pipeline"
+label: "sarek - Germline and somatic variant calling pipeline"
 doc: |
-  Germline variant calling pipeline based on GATK best practices.
-  Performs QC, trimming, BWA-MEM2 alignment, duplicate marking,
-  optional BQSR, GATK HaplotypeCaller, optional joint calling
-  (GenomicsDBImport + GenotypeGVCFs), hard filtering, and QC reporting.
+  Variant calling pipeline based on GATK best practices.
+
+  Germline mode (default): QC, trimming, BWA-MEM2 alignment, duplicate marking,
+  optional BQSR, GATK HaplotypeCaller, optional joint calling, hard filtering.
+
+  Somatic mode: Same preprocessing, then GATK Mutect2 tumor-normal calling
+  with orientation bias learning, optional contamination estimation, and
+  FilterMutectCalls.
+
+  Optional Ensembl VEP functional annotation in either mode.
 
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
@@ -19,10 +25,10 @@ requirements:
   StepInputExpressionRequirement: {}
 
 inputs:
-  # === Samples ===
+  # === Samples (tumors in somatic mode) ===
   fastq_fwd:
     type: File[]
-    doc: "Forward read FASTQ files (one per sample)"
+    doc: "Forward read FASTQ files (one per sample; tumor samples in somatic mode)"
 
   fastq_rev:
     type: File[]?
@@ -48,7 +54,15 @@ inputs:
       - pattern: .pac
     doc: "Pre-built BWA-MEM2 indexed genome FASTA"
 
-  # === Variant calling options ===
+  # === Calling mode ===
+  calling_mode:
+    type:
+      type: enum
+      symbols: [germline, somatic]
+    default: germline
+    doc: "Variant calling mode: germline (HaplotypeCaller) or somatic (Mutect2)"
+
+  # === Germline variant calling options ===
   dbsnp:
     type: File?
     secondaryFiles:
@@ -82,6 +96,57 @@ inputs:
     default: 1
     doc: "Number of genomic interval shards for scatter-gather HaplotypeCaller (1 = no scatter)"
 
+  # === Normal sample (somatic mode) ===
+  normal_fastq_fwd:
+    type: File?
+    doc: "Normal sample forward FASTQ (for tumor-normal somatic calling)"
+
+  normal_fastq_rev:
+    type: File?
+    doc: "Normal sample reverse FASTQ (for tumor-normal somatic calling)"
+
+  normal_sample_id:
+    type: string?
+    default: "normal"
+    doc: "Normal sample identifier (SM tag for BAM read group)"
+
+  # === Somatic calling resources ===
+  germline_resource:
+    type: File?
+    secondaryFiles:
+      - .tbi
+    doc: "Population germline resource VCF for Mutect2 (e.g., gnomAD af-only)"
+
+  panel_of_normals:
+    type: File?
+    secondaryFiles:
+      - .tbi
+    doc: "Panel of normals VCF for Mutect2"
+
+  # === VEP annotation (optional) ===
+  run_vep:
+    type: boolean?
+    default: false
+    doc: "Run Ensembl VEP functional annotation on final VCFs"
+
+  vep_cache_dir:
+    type: Directory?
+    doc: "VEP cache directory (for full annotation with SIFT, PolyPhen, gnomAD)"
+
+  vep_gff:
+    type: File?
+    doc: "GFF3 annotation file (alternative to VEP cache)"
+
+  vep_species:
+    type: string?
+    default: homo_sapiens
+    doc: "Species for VEP annotation"
+
+  vep_assembly:
+    type: string?
+    default: GRCh38
+    doc: "Genome assembly for VEP annotation"
+
   # === Tool options ===
   trimmer:
     type:
@@ -112,7 +177,7 @@ steps:
     out: [genome_with_index]
 
   # =====================
-  # QC + Trimming
+  # QC + Trimming (tumor/germline samples)
   # =====================
   qc_trim:
     run: steps/qc-trim.cwl
@@ -126,7 +191,7 @@ steps:
     out: [trimmed_fwd, trimmed_rev, fastqc_raw_zip, fastp_json]
 
   # =====================
-  # Alignment + sort + markdup
+  # Alignment + sort + markdup (tumor/germline samples)
   # =====================
   align:
     run: steps/align-bwa.cwl
@@ -201,23 +266,58 @@ steps:
     out: [bams]
 
   # =====================
-  # Split intervals for scatter-gather (conditional)
+  # Normal sample QC + Trimming (somatic mode, conditional)
+  # =====================
+  qc_trim_normal:
+    run: steps/qc-trim.cwl
+    when: $(inputs.fastq_fwd != null)
+    in:
+      fastq_fwd: normal_fastq_fwd
+      fastq_rev: normal_fastq_rev
+      sample_id:
+        source: normal_sample_id
+        default: "normal"
+      trimmer: trimmer
+    out: [trimmed_fwd, trimmed_rev, fastqc_raw_zip, fastp_json]
+
+  # =====================
+  # Normal sample alignment (somatic mode, conditional)
+  # =====================
+  align_normal:
+    run: steps/align-bwa.cwl
+    when: $(inputs.fastq_fwd != null)
+    in:
+      fastq_fwd: qc_trim_normal/trimmed_fwd
+      fastq_rev: qc_trim_normal/trimmed_rev
+      sample_id:
+        source: normal_sample_id
+        default: "normal"
+      genome_fasta:
+        source:
+          - bwa_index
+          - build_bwa_index/genome_with_index
+        pickValue: first_non_null
+    out: [aligned_bam, markdup_metrics]
+
+  # =====================
+  # Split intervals for scatter-gather (conditional, germline only)
   # =====================
   split_intervals:
     run: ../../tools/gatk4-split-intervals.cwl
-    when: $(inputs.scatter_count != null && inputs.scatter_count > 1)
+    when: $(inputs.calling_mode != "somatic" && inputs.scatter_count != null && inputs.scatter_count > 1)
     in:
       reference: prepare_reference/reference
       intervals: intervals
       scatter_count: scatter_count
+      calling_mode: calling_mode
     out: [interval_files]
 
   # =====================
-  # GATK HaplotypeCaller — direct (when scatter disabled)
+  # GATK HaplotypeCaller — direct (germline, no scatter)
   # =====================
   haplotypecaller:
     run: ../../tools/gatk4-haplotypecaller.cwl
-    when: $(inputs.scatter_count == null || inputs.scatter_count <= 1)
+    when: $(inputs.calling_mode != "somatic" && (inputs.scatter_count == null || inputs.scatter_count <= 1))
     scatter: [bam, sample_id]
     scatterMethod: dotproduct
     in:
@@ -228,14 +328,15 @@ steps:
       sample_id: sample_ids
       emit_gvcf: emit_gvcf
       scatter_count: scatter_count
+      calling_mode: calling_mode
     out: [vcf]
 
   # =====================
-  # GATK HaplotypeCaller — scatter-gather (when scatter enabled)
+  # GATK HaplotypeCaller — scatter-gather (germline, scatter enabled)
   # =====================
   haplotypecaller_scatter:
     run: steps/haplotypecaller-scatter.cwl
-    when: $(inputs.scatter_count != null && inputs.scatter_count > 1)
+    when: $(inputs.calling_mode != "somatic" && inputs.scatter_count != null && inputs.scatter_count > 1)
     scatter: [bam, sample_id]
     scatterMethod: dotproduct
     in:
@@ -246,6 +347,7 @@ steps:
       sample_id: sample_ids
       emit_gvcf: emit_gvcf
       scatter_count: scatter_count
+      calling_mode: calling_mode
     out: [vcf]
 
   # =====================
@@ -282,11 +384,11 @@ steps:
     out: [vcfs]
 
   # =====================
-  # Joint calling (conditional — runs when emit_gvcf=true)
+  # Joint calling (conditional — germline, emit_gvcf=true)
   # =====================
   joint_calling:
     run: steps/joint-calling.cwl
-    when: $(inputs.emit_gvcf == true)
+    when: $(inputs.calling_mode != "somatic" && inputs.emit_gvcf == true)
     in:
       gvcfs: select_vcf/vcfs
       reference: prepare_reference/reference
@@ -294,6 +396,7 @@ steps:
       intervals: intervals
       cohort_id: cohort_id
       emit_gvcf: emit_gvcf
+      calling_mode: calling_mode
     out: [joint_vcf]
 
   # =====================
@@ -320,29 +423,93 @@ steps:
     out: [stats]
 
   # =====================
-  # Hard filtering (per-sample)
+  # Hard filtering (per-sample, germline only)
   # =====================
   variant_filtration:
     run: ../../tools/gatk4-variantfiltration.cwl
+    when: $(inputs.calling_mode != "somatic")
     scatter: [vcf, sample_id]
     scatterMethod: dotproduct
     in:
       vcf: select_vcf/vcfs
       reference: prepare_reference/reference
       sample_id: sample_ids
+      calling_mode: calling_mode
     out: [filtered_vcf]
 
   # =====================
-  # VCF QC
+  # VCF QC (germline only)
   # =====================
   bcftools_stats:
     run: ../../tools/bcftools-stats.cwl
+    when: $(inputs.calling_mode != "somatic")
     scatter: [vcf, sample_id]
     scatterMethod: dotproduct
     in:
       vcf: variant_filtration/filtered_vcf
       sample_id: sample_ids
+      calling_mode: calling_mode
     out: [stats]
+
+  # =====================
+  # Mutect2 somatic calling (somatic mode, per tumor sample)
+  # =====================
+  mutect2_calling:
+    run: steps/mutect2-calling.cwl
+    when: $(inputs.calling_mode == "somatic")
+    scatter: [tumor_bam, sample_id]
+    scatterMethod: dotproduct
+    in:
+      tumor_bam: select_bam/bams
+      normal_bam: align_normal/aligned_bam
+      normal_sample_id: normal_sample_id
+      reference: prepare_reference/reference
+      germline_resource: germline_resource
+      panel_of_normals: panel_of_normals
+      intervals: intervals
+      sample_id: sample_ids
+      calling_mode: calling_mode
+    out: [filtered_vcf, unfiltered_vcf, contamination_table]
+
+  # =====================
+  # VEP annotation — germline VCFs (conditional)
+  # =====================
+  vep_germline:
+    run: ../../tools/ensembl-vep.cwl
+    when: $(inputs.run_vep == true && inputs.calling_mode != "somatic")
+    scatter: [vcf, prefix]
+    scatterMethod: dotproduct
+    in:
+      vcf: variant_filtration/filtered_vcf
+      reference_fasta: genome_fasta
+      prefix: sample_ids
+      cache_dir: vep_cache_dir
+      gff: vep_gff
+      species: vep_species
+      assembly: vep_assembly
+      run_vep: run_vep
+      calling_mode: calling_mode
+    out: [annotated_vcf]
+
+  # =====================
+  # VEP annotation — somatic VCFs (conditional)
+  # =====================
+  vep_somatic:
+    run: ../../tools/ensembl-vep.cwl
+    when: $(inputs.run_vep == true && inputs.calling_mode == "somatic")
+    scatter: [vcf, prefix]
+    scatterMethod: dotproduct
+    in:
+      vcf: mutect2_calling/filtered_vcf
+      reference_fasta: genome_fasta
+      prefix: sample_ids
+      cache_dir: vep_cache_dir
+      gff: vep_gff
+      species: vep_species
+      assembly: vep_assembly
+      run_vep: run_vep
+      calling_mode: calling_mode
+    out: [annotated_vcf]
 
   # =====================
   # MultiQC reporting
@@ -366,16 +533,53 @@ steps:
     out: [html_report, data_dir]
 
 outputs:
+  # === Germline outputs ===
   filtered_vcfs:
-    type: File[]
+    type: File[]?
     outputSource: variant_filtration/filtered_vcf
-    doc: "Filtered VCF files per sample"
+    doc: "Filtered germline VCF files per sample (germline mode)"
 
   raw_vcfs:
     type: File[]
     outputSource: select_vcf/vcfs
-    doc: "Raw HaplotypeCaller VCF files per sample"
+    doc: "Raw HaplotypeCaller VCF files per sample (germline mode)"
 
+  joint_vcf:
+    type: File?
+    outputSource: joint_calling/joint_vcf
+    doc: "Joint-called multi-sample VCF (when emit_gvcf=true)"
+
+  joint_filtered_vcf:
+    type: File?
+    outputSource: joint_variant_filtration/filtered_vcf
+    doc: "Filtered joint-called VCF (when emit_gvcf=true)"
+
+  # === Somatic outputs ===
+  somatic_filtered_vcfs:
+    type: File[]?
+    outputSource: mutect2_calling/filtered_vcf
+    doc: "Filtered somatic VCFs per tumor sample (somatic mode)"
+
+  somatic_unfiltered_vcfs:
+    type: File[]?
+    outputSource: mutect2_calling/unfiltered_vcf
+    doc: "Unfiltered Mutect2 VCFs per tumor sample (somatic mode)"
+
+  contamination_tables:
+    type: File[]?
+    outputSource: mutect2_calling/contamination_table
+    doc: "Contamination estimates per tumor sample (somatic mode, when germline_resource provided)"
+
+  # === VEP annotation outputs ===
+  vep_annotated_vcfs:
+    type: File[]?
+    outputSource:
+      - vep_germline/annotated_vcf
+      - vep_somatic/annotated_vcf
+    pickValue: first_non_null
+    doc: "VEP-annotated VCF files (when run_vep=true)"
+
+  # === Shared outputs ===
   aligned_bams:
     type: File[]
     outputSource: align/aligned_bam
@@ -392,16 +596,6 @@ outputs:
     doc: "samtools stats reports"
 
   bcftools_stats_reports:
-    type: File[]
+    type: File[]?
     outputSource: bcftools_stats/stats
-    doc: "bcftools stats on filtered VCFs"
-
-  joint_vcf:
-    type: File?
-    outputSource: joint_calling/joint_vcf
-    doc: "Joint-called multi-sample VCF (when emit_gvcf=true)"
-
-  joint_filtered_vcf:
-    type: File?
-    outputSource: joint_variant_filtration/filtered_vcf
-    doc: "Filtered joint-called VCF (when emit_gvcf=true)"
+    doc: "bcftools stats on filtered VCFs (germline mode)"

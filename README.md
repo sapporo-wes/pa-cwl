@@ -42,7 +42,7 @@ All 16 pipelines implemented and tested. Functional specifications derived from 
 
 | Workflow | Description | Key Tools |
 |----------|-------------|-----------|
-| [sarek](workflows/sarek/) | Germline variant calling | BWA-MEM2, GATK4 (BQSR, HC, joint calling, scatter) |
+| [sarek](workflows/sarek/) | Germline + somatic variant calling | BWA-MEM2, GATK4 (HC, Mutect2, BQSR), VEP |
 | [raredisease](workflows/raredisease/) | Rare disease variant annotation | sarek + VEP, DeepVariant, Manta, GENMOD |
 | [viralrecon](workflows/viralrecon/) | Viral variant calling and consensus | BWA-MEM2, iVar, bcftools, Pangolin, Nextclade |
 
@@ -61,7 +61,7 @@ All 16 pipelines implemented and tested. Functional specifications derived from 
 | [nanoseq](workflows/nanoseq/) | Nanopore long-read sequencing | minimap2, NanoPlot, medaka, Sniffles2, StringTie2 |
 | [hic](workflows/hic/) | Hi-C chromatin conformation | Bowtie2, pairtools, cooler, HiCExplorer, cooltools |
 
-119 CWL tools in `tools/`, shared across pipelines. See [pipeline roadmap](docs/pipeline-roadmap.md) for detailed feature tables and test matrices.
+124 CWL tools in `tools/`, shared across pipelines. See [pipeline roadmap](docs/pipeline-roadmap.md) for detailed feature tables and test matrices.
 
 ## For AI Agents
 
@@ -96,7 +96,8 @@ cwltool workflows/rnaseq/main.cwl workflows/rnaseq/examples/star-salmon.yaml
 ## Roadmap
 
 - **Phase 1** — 16 core pipelines (fetchngs through hic) — **Complete**
-- **Phase 2** — v1.1 enhancements — **Complete** (44 features across 12 pipelines, 119 tools)
+- **Phase 2** — v1.1 enhancements — **Complete** (44 features across 12 pipelines)
+- **Phase 2.5** — v2.0 sarek somatic calling (Mutect2) + VEP annotation — **Complete**
 - **Phase 3** — MCP server for agent discovery, Python client library
 - **Phase 4** — Community contributions, workflow template generator
 
