@@ -363,25 +363,30 @@ steps:
           type: Any
         scatter_vcfs:
           type: Any
+        sample_ids:
+          type: string[]
       outputs:
         vcfs:
           type: File[]
+        ids:
+          type: string[]
       expression: |
         ${
           var direct = inputs.direct_vcfs;
           if (direct !== null && Array.isArray(direct) && direct.length > 0 && direct[0] !== null) {
-            return {vcfs: direct};
+            return {vcfs: direct, ids: inputs.sample_ids};
           }
           var scatter = inputs.scatter_vcfs;
           if (scatter !== null && Array.isArray(scatter) && scatter.length > 0 && scatter[0] !== null) {
-            return {vcfs: scatter};
+            return {vcfs: scatter, ids: inputs.sample_ids};
           }
-          return {vcfs: []};
+          return {vcfs: [], ids: []};
         }
     in:
       direct_vcfs: haplotypecaller/vcf
       scatter_vcfs: haplotypecaller_scatter/vcf
-    out: [vcfs]
+      sample_ids: sample_ids
+    out: [vcfs, ids]
 
   # =====================
   # Joint calling (conditional — germline, emit_gvcf=true)
@@ -433,7 +438,7 @@ steps:
     in:
       vcf: select_vcf/vcfs
       reference: prepare_reference/reference
-      sample_id: sample_ids
+      sample_id: select_vcf/ids
       calling_mode: calling_mode
     out: [filtered_vcf]
 
@@ -447,7 +452,7 @@ steps:
     scatterMethod: dotproduct
     in:
       vcf: variant_filtration/filtered_vcf
-      sample_id: sample_ids
+      sample_id: select_vcf/ids
       calling_mode: calling_mode
     out: [stats]
 
@@ -482,7 +487,7 @@ steps:
     in:
       vcf: variant_filtration/filtered_vcf
       reference_fasta: genome_fasta
-      prefix: sample_ids
+      prefix: select_vcf/ids
       cache_dir: vep_cache_dir
       gff: vep_gff
       species: vep_species

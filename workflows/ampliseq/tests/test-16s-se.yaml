@@ -1,0 +1,18 @@
+# Test: Single-end 16S amplicon analysis (v1.1 feature)
+# Uses only forward reads — DADA2 skips pair merging
+
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/amplicon/sample1_R1.fastq.gz
+
+sample_ids:
+  - sample1
+
+# Forward primer only (no reverse for SE)
+primer_fwd: "GTGYCAGCMGCCGCGGTAA"
+
+taxonomy_db:
+  class: File
+  path: ../../../test-data/amplicon/taxonomy_ref.fasta
+
+trunc_len_fwd: 0

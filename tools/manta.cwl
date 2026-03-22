@@ -34,12 +34,12 @@ requirements:
           manta_run/runWorkflow.py -j "$THREADS"
 
           # Copy outputs with sample-prefixed names
-          cp manta_run/results/variants/diploidSV.vcf.gz "${SAMPLE_ID}.manta.diploidSV.vcf.gz"
-          cp manta_run/results/variants/diploidSV.vcf.gz.tbi "${SAMPLE_ID}.manta.diploidSV.vcf.gz.tbi"
-          cp manta_run/results/variants/candidateSV.vcf.gz "${SAMPLE_ID}.manta.candidateSV.vcf.gz"
-          cp manta_run/results/variants/candidateSV.vcf.gz.tbi "${SAMPLE_ID}.manta.candidateSV.vcf.gz.tbi"
-          cp manta_run/results/variants/candidateSmallIndels.vcf.gz "${SAMPLE_ID}.manta.candidateSmallIndels.vcf.gz"
-          cp manta_run/results/variants/candidateSmallIndels.vcf.gz.tbi "${SAMPLE_ID}.manta.candidateSmallIndels.vcf.gz.tbi"
+          cp manta_run/results/variants/diploidSV.vcf.gz "$SAMPLE_ID.manta.diploidSV.vcf.gz"
+          cp manta_run/results/variants/diploidSV.vcf.gz.tbi "$SAMPLE_ID.manta.diploidSV.vcf.gz.tbi"
+          cp manta_run/results/variants/candidateSV.vcf.gz "$SAMPLE_ID.manta.candidateSV.vcf.gz"
+          cp manta_run/results/variants/candidateSV.vcf.gz.tbi "$SAMPLE_ID.manta.candidateSV.vcf.gz.tbi"
+          cp manta_run/results/variants/candidateSmallIndels.vcf.gz "$SAMPLE_ID.manta.candidateSmallIndels.vcf.gz"
+          cp manta_run/results/variants/candidateSmallIndels.vcf.gz.tbi "$SAMPLE_ID.manta.candidateSmallIndels.vcf.gz.tbi"
 
 hints:
   DockerRequirement:

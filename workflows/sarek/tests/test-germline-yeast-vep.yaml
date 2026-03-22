@@ -1,0 +1,17 @@
+# Test: Germline calling with VEP annotation in GFF mode (v2.0 feature)
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R1.fastq.gz
+fastq_rev:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R2.fastq.gz
+sample_ids:
+  - yeast_germline
+genome_fasta:
+  class: File
+  path: ../../../test-data/yeast/genome.fa
+run_vep: true
+vep_gff:
+  class: File
+  path: ../../../test-data/yeast/genes.gtf
+trimmer: fastp

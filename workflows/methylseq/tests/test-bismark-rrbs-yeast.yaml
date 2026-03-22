@@ -1,0 +1,13 @@
+# Test: RRBS mode — skips deduplication (v1.1 feature)
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R1.fastq.gz
+fastq_rev:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R2.fastq.gz
+sample_ids:
+  - yeast_rrbs
+genome_fasta:
+  class: File
+  path: ../../../test-data/yeast/genome.fa
+rrbs: true

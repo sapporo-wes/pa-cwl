@@ -1,0 +1,42 @@
+##fileformat=VCFv4.2
+##fileDate=20260322
+##source=simulate-tumor-reads.py
+##INFO=<ID=SOMATIC,Number=0,Type=Flag,Description="Simulated somatic mutation">
+##contig=<ID=I,length=230218>
+##contig=<ID=II,length=813184>
+##contig=<ID=III,length=316620>
+##contig=<ID=IV,length=1531933>
+##contig=<ID=V,length=576874>
+##contig=<ID=VI,length=270161>
+##contig=<ID=VII,length=1090940>
+##contig=<ID=VIII,length=562643>
+##contig=<ID=IX,length=439888>
+##contig=<ID=X,length=745751>
+##contig=<ID=XI,length=666816>
+##contig=<ID=XII,length=1078177>
+##contig=<ID=XIII,length=924431>
+##contig=<ID=XIV,length=784333>
+##contig=<ID=XV,length=1091291>
+##contig=<ID=XVI,length=948066>
+##contig=<ID=Mito,length=85779>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+II	410195	.	A	C	.	PASS	SOMATIC
+II	640848	.	A	C	.	PASS	SOMATIC
+II	648598	.	T	C	.	PASS	SOMATIC
+IV	103428	.	T	A	.	PASS	SOMATIC
+IV	447589	.	T	G	.	PASS	SOMATIC
+IV	906567	.	T	C	.	PASS	SOMATIC
+IV	1319369	.	C	A	.	PASS	SOMATIC
+IX	182480	.	T	A	.	PASS	SOMATIC
+IX	209302	.	T	C	.	PASS	SOMATIC
+IX	266684	.	C	T	.	PASS	SOMATIC
+IX	326773	.	T	C	.	PASS	SOMATIC
+VII	375469	.	C	A	.	PASS	SOMATIC
+VII	734341	.	A	C	.	PASS	SOMATIC
+VII	753188	.	G	A	.	PASS	SOMATIC
+X	530090	.	C	T	.	PASS	SOMATIC
+XI	256272	.	C	A	.	PASS	SOMATIC
+XIII	675273	.	G	A	.	PASS	SOMATIC
+XIV	166445	.	A	C	.	PASS	SOMATIC
+XIV	189207	.	A	G	.	PASS	SOMATIC
+XVI	652242	.	G	C	.	PASS	SOMATIC

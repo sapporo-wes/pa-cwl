@@ -34,7 +34,16 @@ requirements:
           LOCAL_FASTA="\$(basename $FASTA)"
           cp "$FASTA" "$LOCAL_FASTA"
 
-          CMD="vep -i $VCF --fasta $LOCAL_FASTA -o \${PREFIX}_vep.vcf"
+          # Copy VCF to working dir; decompress if bgzipped
+          LOCAL_VCF="\$(basename $VCF)"
+          if [[ "$VCF" == *.gz ]]; then
+            gunzip -c "$VCF" > "\${LOCAL_VCF%.gz}"
+            LOCAL_VCF="\${LOCAL_VCF%.gz}"
+          else
+            cp "$VCF" "$LOCAL_VCF"
+          fi
+
+          CMD="vep -i $LOCAL_VCF --format vcf --fasta $LOCAL_FASTA -o \${PREFIX}_vep.vcf"
           CMD="$CMD --vcf --force_overwrite --no_stats --fork $THREADS"
           CMD="$CMD --symbol --biotype --canonical"
 
@@ -42,17 +51,27 @@ requirements:
             CMD="$CMD --offline --dir_cache $CACHE_DIR --species $SPECIES --assembly $ASSEMBLY"
             CMD="$CMD --sift b --polyphen b --af --af_gnomade --max_af"
           elif [ -n "$GFF" ]; then
-            # VEP requires bgzipped+tabix-indexed GFF
-            LOCAL_GFF="\$(basename $GFF)"
-            if [[ "$GFF" == *.gz ]]; then
-              cp "$GFF" "$LOCAL_GFF"
-            else
-              grep -v "^#" "$GFF" | sort -k1,1 -k4,4n > sorted.gff3
-              bgzip sorted.gff3
-              tabix -p gff sorted.gff3.gz
-              LOCAL_GFF="sorted.gff3.gz"
+            # VEP requires bgzipped+tabix-indexed annotation
+            # Detect GTF vs GFF3 by file extension
+            GFF_FLAG="--gff"
+            if [[ "$GFF" == *.gtf* ]]; then
+              GFF_FLAG="--gtf"
             fi
-            CMD="$CMD --gff $LOCAL_GFF"
+
+            if [[ "$GFF" == *.gz ]]; then
+              LOCAL_GFF="\$(basename $GFF)"
+              cp "$GFF" "$LOCAL_GFF"
+              # Ensure tabix index exists
+              if [ ! -f "\${LOCAL_GFF}.tbi" ]; then
+                tabix -p gff "$LOCAL_GFF"
+              fi
+            else
+              grep -v "^#" "$GFF" | sort -k1,1 -k4,4n > sorted_annotation.gz_input
+              bgzip -c sorted_annotation.gz_input > sorted_annotation.gz
+              tabix -p gff sorted_annotation.gz
+              LOCAL_GFF="sorted_annotation.gz"
+            fi
+            CMD="$CMD $GFF_FLAG $LOCAL_GFF"
           else
             CMD="$CMD --offline --no_cache --dir_cache /tmp"
           fi

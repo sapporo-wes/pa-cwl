@@ -1,0 +1,21 @@
+# Test: Rare disease with Manta SV calling + joint calling (v1.1 features)
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R1.fastq.gz
+fastq_rev:
+  - class: File
+    path: ../../../test-data/yeast/yeast_sim_R2.fastq.gz
+sample_ids:
+  - yeast_sample
+genome_fasta:
+  class: File
+  path: ../../../test-data/yeast/genome.fa
+intervals:
+  class: File
+  path: ../../../test-data/yeast/intervals.bed
+vep_gff:
+  class: File
+  path: ../../../test-data/yeast/genes.gtf
+run_manta: true
+emit_gvcf: true
+cohort_id: yeast_cohort

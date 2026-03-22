@@ -1,0 +1,14 @@
+# Test: Nanopore with NanoFilt quality filtering + Sniffles2 SV calling (v1.1 features)
+fastq:
+  - class: File
+    path: ../../../test-data/nanopore/sample1_nanopore.fastq.gz
+sample_ids:
+  - sample1
+reference:
+  class: File
+  path: ../../../test-data/nanopore/reference.fasta
+minimap2_preset: map-ont
+run_nanofilt: true
+nanofilt_min_length: 100
+nanofilt_quality: 5
+run_sniffles: true

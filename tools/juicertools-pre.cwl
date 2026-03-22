@@ -27,10 +27,10 @@ requirements:
           # juicer_tools pre expects: <pairs> <output.hic> <genome_sizes>
           # -r flag for resolutions
           juicer_tools pre \
-            -r "${RESOLUTIONS}" \
-            "${PAIRS}" \
-            "${OUTPUT}" \
-            "${CHROMSIZES}"
+            -r "$RESOLUTIONS" \
+            "$PAIRS" \
+            "$OUTPUT" \
+            "$CHROMSIZES"
 
 hints:
   DockerRequirement:

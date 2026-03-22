@@ -1,0 +1,22 @@
+# Test: Somatic Mutect2 calling — tumor vs normal (v2.0 feature)
+# Tumor reads have ~20 simulated SNVs; normal reads are unmodified
+fastq_fwd:
+  - class: File
+    path: ../../../test-data/yeast/tumor_R1.fastq.gz
+fastq_rev:
+  - class: File
+    path: ../../../test-data/yeast/tumor_R2.fastq.gz
+sample_ids:
+  - yeast_tumor
+genome_fasta:
+  class: File
+  path: ../../../test-data/yeast/genome.fa
+calling_mode: somatic
+normal_fastq_fwd:
+  class: File
+  path: ../../../test-data/yeast/yeast_sim_R1.fastq.gz
+normal_fastq_rev:
+  class: File
+  path: ../../../test-data/yeast/yeast_sim_R2.fastq.gz
+normal_sample_id: yeast_normal
+trimmer: fastp
