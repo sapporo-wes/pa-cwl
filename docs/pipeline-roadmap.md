@@ -81,9 +81,9 @@ ChIP-seq analysis with QC, alignment, filtering, peak calling, and coverage trac
 
 ### sarek — Germline Variant Calling
 
-**Status: 1.1 — Germline HaplotypeCaller with BQSR and joint calling**
+**Status: 1.1 — Germline HaplotypeCaller with BQSR, joint calling, and scatter-gather**
 
-Germline variant calling with GATK best practices: alignment, dedup, optional BQSR, HaplotypeCaller, optional joint calling with GenomicsDBImport + GenotypeGVCFs, hard filtering.
+Germline variant calling with GATK best practices: alignment, dedup, optional BQSR, HaplotypeCaller with optional interval scatter, optional joint calling with GenomicsDBImport + GenotypeGVCFs, hard filtering.
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -102,7 +102,7 @@ Germline variant calling with GATK best practices: alignment, dedup, optional BQ
 | MultiQC | Done | Integrates FastQC, fastp, Picard, samtools, bcftools |
 | Somatic calling (Mutect2) | Planned v2.0 | Tumor-normal pairs |
 | Annotation (VEP/snpEff) | Planned v2.0 | Functional variant annotation |
-| Scatter-gather parallelization | Planned v1.1 | For large genomes |
+| Scatter-gather (HaplotypeCaller) | Done v1.1 | Interval-based HaplotypeCaller scatter |
 
 **Tested pathway matrix:**
 
@@ -116,9 +116,9 @@ Germline variant calling with GATK best practices: alignment, dedup, optional BQ
 
 ### methylseq — Bisulfite Sequencing Methylation
 
-**Status: 1.1 — Bismark and bwa-meth paths**
+**Status: 1.1 — Bismark and bwa-meth paths, RRBS mode**
 
-Bisulfite sequencing analysis with dual aligner support: Bismark or bwa-meth + MethylDackel.
+Bisulfite sequencing analysis with dual aligner support: Bismark or bwa-meth + MethylDackel. RRBS mode skips deduplication.
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -132,7 +132,7 @@ Bisulfite sequencing analysis with dual aligner support: Bismark or bwa-meth + M
 | M-bias reports | Done | |
 | bwa-meth + MethylDackel path | Done v1.1 | Conditional on aligner="bwameth"; index + align + markdup + extract |
 | MultiQC | Done | Integrates FastQC, Bismark reports |
-| RRBS mode (skip dedup) | Planned v1.1 | |
+| RRBS mode (skip dedup) | Done v1.1 | Conditional deduplication skip |
 
 **Tested pathway matrix:**
 
@@ -195,9 +195,9 @@ Downloads FASTQ from ENA/SRA and generates samplesheets for downstream workflows
 
 ### scrnaseq — Single-Cell RNA-seq
 
-**Status: 1.1 — STARsolo and Alevin-Fry paths tested**
+**Status: 1.1 — STARsolo, Alevin-Fry, Kallisto/BUStools, Smart-seq2**
 
-Single-cell RNA-seq quantification with dual paths: STARsolo (alignment-based) or Alevin-Fry/simpleaf (pseudo-alignment).
+Single-cell RNA-seq quantification with four paths: STARsolo, Alevin-Fry/simpleaf, Kallisto/BUStools, and Smart-seq2 (plate-based). Optional emptyDrops QC.
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -211,10 +211,10 @@ Single-cell RNA-seq quantification with dual paths: STARsolo (alignment-based) o
 | MultiQC | Done | Integrates FastQC + STAR logs |
 | 10x Chromium v2/v3 | Done | Via cb_len/umi_len parameters |
 | Drop-seq | Done | cb_len=12, umi_len=8 |
-| Kallisto+BUStools path | Planned v1.1 | |
+| Kallisto+BUStools path | Done v1.1 | Conditional on quantifier="kallisto"; kb-ref + kb-count |
 | CellRanger path | Not planned | Licensing constraints |
-| Smart-seq2 (plate-based) | Planned v1.1 | No barcode demux needed |
-| Empty droplet detection (R) | Planned v1.1 | dropletUtils::emptyDrops |
+| Smart-seq2 (plate-based) | Done v1.1 | Conditional on quantifier="smartseq2"; STAR + featureCounts |
+| Empty droplet detection (R) | Done v1.1 | dropletUtils::emptyDrops; conditional on run_emptydrops=true |
 
 **Tested pathway matrix:**
 
@@ -226,9 +226,9 @@ Single-cell RNA-seq quantification with dual paths: STARsolo (alignment-based) o
 
 ### ampliseq — 16S/ITS Amplicon Sequencing
 
-**Status: 1.1 — DADA2 path tested, single-end mode added**
+**Status: 1.1 — DADA2 path tested, single-end mode, species assignment, QIIME2 diversity**
 
-Amplicon sequencing analysis with Cutadapt primer trimming and DADA2 for ASV inference, chimera removal, and taxonomy assignment. Supports paired-end and single-end data.
+Amplicon sequencing analysis with Cutadapt primer trimming and DADA2 for ASV inference, chimera removal, taxonomy/species assignment. Supports paired-end and single-end data. Optional QIIME2 diversity analysis.
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -243,8 +243,8 @@ Amplicon sequencing analysis with Cutadapt primer trimming and DADA2 for ASV inf
 | Representative sequences | Done | FASTA of unique ASVs |
 | Single-end mode | Done v1.1 | Optional fastq_rev/primer_rev; DADA2 skips pair merging |
 | MultiQC | Done | Integrates FastQC + Cutadapt |
-| QIIME2 integration | Planned v1.1 | Phylogenetic diversity, ordination |
-| Species-level assignment | Planned v1.1 | addSpecies with exact matching |
+| QIIME2 diversity | Done v1.1 | Conditional on run_qiime2=true; Shannon, observed features, Bray-Curtis, UniFrac |
+| Species-level assignment | Done v1.1 | Conditional on species_db; DADA2 addSpecies |
 
 **Tested pathway matrix:**
 
@@ -256,9 +256,9 @@ Amplicon sequencing analysis with Cutadapt primer trimming and DADA2 for ASV inf
 
 ### viralrecon — Viral Variant Calling and Consensus
 
-**Status: 1.1 — iVar + bcftools variant calling, Pangolin lineage**
+**Status: 1.1 — iVar + bcftools, Pangolin, Nextclade, Kraken2 host filtering**
 
-Viral genome variant calling and consensus generation. Primary iVar path plus optional bcftools mpileup+call and Pangolin SARS-CoV-2 lineage assignment.
+Viral genome variant calling and consensus generation. Primary iVar path plus optional bcftools, Pangolin lineage, Nextclade annotation, and Kraken2 host read filtering.
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -274,8 +274,8 @@ Viral genome variant calling and consensus generation. Primary iVar path plus op
 | Pangolin lineage assignment | Done v1.1 | Conditional on run_pangolin=true |
 | samtools stats | Done | Alignment QC for MultiQC |
 | MultiQC | Done | Integrates FastQC, fastp, Picard, samtools, bcftools stats |
-| Nextclade annotation | Planned v1.1 | Multi-pathogen support |
-| Kraken2 host filtering | Planned v1.1 | |
+| Nextclade annotation | Done v1.1 | Conditional on run_nextclade=true; multi-pathogen support |
+| Kraken2 host filtering | Done v1.1 | Conditional on kraken2_db input; pre-alignment host removal |
 
 **Tested pathway matrix:**
 
@@ -287,9 +287,9 @@ Viral genome variant calling and consensus generation. Primary iVar path plus op
 
 ### mag — Metagenome-Assembled Genomes
 
-**Status: 1.1 — SPAdes + MetaBAT2, optional DAS Tool + BUSCO**
+**Status: 1.1 — SPAdes + MetaBAT2/MaxBin2, DAS Tool, BUSCO, GTDB-Tk, Prokka**
 
-Metagenome assembly with SPAdes, contig binning with MetaBAT2, optional bin refinement with DAS Tool, optional bin quality assessment with BUSCO, gene prediction with Prodigal.
+Metagenome assembly with SPAdes, contig binning with MetaBAT2 and optional MaxBin2, optional bin refinement with DAS Tool, optional bin quality assessment with BUSCO, optional taxonomic classification with GTDB-Tk, optional functional annotation with Prokka, gene prediction with Prodigal. Optional host read removal with Bowtie2.
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -304,10 +304,10 @@ Metagenome assembly with SPAdes, contig binning with MetaBAT2, optional bin refi
 | BUSCO bin quality | Done v1.1 | Conditional on busco_lineage input; scattered per bin |
 | Prodigal gene prediction | Done | Metagenome mode |
 | MultiQC | Done | Integrates FastQC, fastp, Bowtie2 |
-| Host read removal | Planned v1.1 | Bowtie2 against host reference |
-| MaxBin2 | Planned v1.1 | Alternative binner |
-| GTDB-Tk | Planned v1.1 | Bin taxonomic classification |
-| Prokka | Planned v1.1 | Bin functional annotation |
+| Host read removal | Done v1.1 | Conditional on host_index_files; Bowtie2 against host reference |
+| MaxBin2 | Done v1.1 | Conditional on run_maxbin2=true; alternative binner |
+| GTDB-Tk | Done v1.1 | Conditional on gtdbtk_db; bin taxonomic classification |
+| Prokka | Done v1.1 | Conditional on run_prokka=true; bin functional annotation |
 
 **Tested pathway matrix:**
 
@@ -320,9 +320,9 @@ Metagenome assembly with SPAdes, contig binning with MetaBAT2, optional bin refi
 
 ### taxprofiler — Taxonomic Profiling
 
-**Status: 1.1 — Kraken2 + Bracken, optional MetaPhlAn**
+**Status: 1.1 — Kraken2 + Bracken, MetaPhlAn, Centrifuge, Krona, Taxpasta**
 
-Taxonomic classification with Kraken2/Bracken and optional MetaPhlAn marker-gene profiling.
+Taxonomic classification with Kraken2/Bracken, optional MetaPhlAn marker-gene profiling, optional Centrifuge FM-index classification, optional Krona visualization, and optional Taxpasta profile merging.
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -332,9 +332,9 @@ Taxonomic classification with Kraken2/Bracken and optional MetaPhlAn marker-gene
 | Bracken abundance | Done | Bayesian re-estimation from Kraken2 reports |
 | MetaPhlAn | Done v1.1 | Conditional on metaphlan_db input; marker-gene profiling |
 | MultiQC | Done | Integrates FastQC, fastp, Kraken2 |
-| Centrifuge | Planned v1.1 | FM-index based classification |
-| Krona visualization | Planned v1.1 | Interactive taxonomy plots |
-| Taxpasta | Planned v1.1 | Standardized output format |
+| Centrifuge | Done v1.1 | Conditional on centrifuge_db; FM-index based classification |
+| Krona visualization | Done v1.1 | Conditional on run_krona=true; interactive taxonomy plots |
+| Taxpasta | Done v1.1 | Conditional on run_taxpasta=true; standardized output format |
 
 **Tested pathway matrix:**
 
@@ -346,9 +346,9 @@ Taxonomic classification with Kraken2/Bracken and optional MetaPhlAn marker-gene
 
 ### nanoseq — Nanopore Long-Read Sequencing
 
-**Status: 1.1 — minimap2 alignment + NanoPlot QC + optional medaka variant calling**
+**Status: 1.1 — minimap2, NanoPlot, medaka, NanoFilt, StringTie2, Sniffles2**
 
-Nanopore long-read sequencing analysis with NanoPlot QC, minimap2 alignment, optional medaka variant calling, and MultiQC reporting.
+Nanopore long-read sequencing analysis with NanoPlot QC, optional NanoFilt quality filtering, minimap2 alignment, optional medaka variant calling, optional Sniffles2 structural variant calling, and optional StringTie2 transcript assembly.
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -359,9 +359,9 @@ Nanopore long-read sequencing analysis with NanoPlot QC, minimap2 alignment, opt
 | samtools stats | Done | Alignment statistics for MultiQC |
 | Variant calling (medaka) | Done v1.1 | Conditional on call_variants=true; inference+vcf+annotate pipeline |
 | MultiQC | Done | Integrates NanoStat, FastQC, samtools |
-| NanoFilt quality filtering | Planned v1.1 | |
-| StringTie2 transcript assembly | Planned v1.1 | For RNA mode |
-| Structural variants (sniffles) | Planned v1.1 | |
+| NanoFilt quality filtering | Done v1.1 | Conditional on run_nanofilt=true; length and quality filtering |
+| StringTie2 transcript assembly | Done v1.1 | Conditional on run_stringtie=true; for RNA mode |
+| Structural variants (Sniffles2) | Done v1.1 | Conditional on run_sniffles=true; SV detection |
 
 **Tested pathway matrix:**
 
@@ -373,9 +373,9 @@ Nanopore long-read sequencing analysis with NanoPlot QC, minimap2 alignment, opt
 
 ### rnafusion — Gene Fusion Detection
 
-**Status: 1.0 — Arriba path tested (Docker)**
+**Status: 1.1 — Arriba, STAR-Fusion, FusionCatcher, FusionInspector**
 
-Gene fusion detection from RNA-seq data using STAR chimeric alignment and Arriba.
+Gene fusion detection from RNA-seq data. Four detection methods: Arriba, STAR-Fusion, FusionCatcher, and FusionInspector for validation. Arriba visualization for publication-ready figures.
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -385,10 +385,10 @@ Gene fusion detection from RNA-seq data using STAR chimeric alignment and Arriba
 | Arriba fusion detection | Done | Blacklist auto-disabled when not provided |
 | samtools index | Done | |
 | MultiQC | Done | Integrates FastQC, fastp, STAR |
-| STAR-Fusion | Planned v1.1 | CTAT resource bundle required |
-| FusionCatcher | Planned v1.1 | |
-| FusionInspector | Planned v1.1 | Post-processing validation |
-| Arriba visualization | Planned v1.1 | draw_fusions.R |
+| STAR-Fusion | Done v1.1 | Conditional on run_star_fusion=true; CTAT resource bundle |
+| FusionCatcher | Done v1.1 | Conditional on run_fusioncatcher=true |
+| FusionInspector | Done v1.1 | Conditional on run_fusion_inspector=true; post-processing validation |
+| Arriba visualization | Done v1.1 | Conditional on run_arriba_viz=true; draw_fusions.R |
 
 **Tested pathway matrix:**
 
@@ -400,9 +400,9 @@ Gene fusion detection from RNA-seq data using STAR chimeric alignment and Arriba
 
 ### raredisease — Rare Disease Variant Calling and Annotation
 
-**Status: 1.0 — sarek + VEP annotation tested (Docker)**
+**Status: 1.1 — sarek + VEP + DeepVariant, Manta, CADD, GENMOD, ExpansionHunter**
 
-Extends the sarek germline variant calling pipeline with Ensembl VEP annotation.
+Extends the sarek germline variant calling pipeline with Ensembl VEP annotation, optional DeepVariant, optional Manta SV calling, optional CADD annotation, optional GENMOD pedigree ranking, and optional ExpansionHunter repeat expansion detection. Includes joint calling via GenomicsDBImport + GenotypeGVCFs.
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -415,12 +415,12 @@ Extends the sarek germline variant calling pipeline with Ensembl VEP annotation.
 | samtools stats | Done | |
 | bcftools stats | Done | |
 | MultiQC | Done | |
-| DeepVariant | Planned v1.1 | Alternative SNV caller |
-| Joint calling | Planned v1.1 | GenomicsDBImport + GenotypeGVCFs |
-| SV calling (Manta) | Planned v1.1 | |
-| CADD scores | Planned v1.1 | Pathogenicity scoring |
-| GENMOD ranking | Planned v1.1 | Pedigree-aware variant ranking |
-| ExpansionHunter | Planned v1.1 | Repeat expansion detection |
+| DeepVariant | Done v1.1 | Conditional on run_deepvariant=true |
+| Joint calling | Done v1.1 | GenomicsDBImport + GenotypeGVCFs scatter subworkflow |
+| SV calling (Manta) | Done v1.1 | Conditional on run_manta=true |
+| CADD scores | Done v1.1 | Conditional on cadd_resources; bcftools annotate |
+| GENMOD ranking | Done v1.1 | Conditional on run_genmod=true; pedigree-aware ranking |
+| ExpansionHunter | Done v1.1 | Conditional on variant_catalog; repeat expansion detection |
 
 **Tested pathway matrix:**
 
@@ -432,9 +432,9 @@ Extends the sarek germline variant calling pipeline with Ensembl VEP annotation.
 
 ### cutandrun — CUT&RUN/CUT&TAG Peak Calling
 
-**Status: 1.1 — MACS2 + optional SEACR peak calling**
+**Status: 1.1 — MACS2, SEACR, spike-in normalization, fragment size QC**
 
-CUT&RUN and CUT&TAG analysis with Bowtie2 alignment, MACS2 peak calling (--nomodel), optional SEACR peak calling, and bigWig coverage tracks.
+CUT&RUN and CUT&TAG analysis with Bowtie2 alignment, MACS2 peak calling (--nomodel), optional SEACR peak calling, optional E. coli spike-in normalization, and fragment size distribution QC.
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -449,8 +449,8 @@ CUT&RUN and CUT&TAG analysis with Bowtie2 alignment, MACS2 peak calling (--nomod
 | deepTools bamCoverage | Done | Normalized bigWig generation |
 | Optional IgG control | Done | Optional control inputs in workflow |
 | MultiQC | Done | Integrates FastQC, fastp, Bowtie2, Picard |
-| Spike-in normalization | Planned v1.1 | E. coli spike-in calibration |
-| Fragment size QC | Planned v1.1 | CUT&RUN diagnostic plots |
+| Spike-in normalization | Done v1.1 | Conditional on spikein_index_files; E. coli spike-in calibration |
+| Fragment size QC | Done v1.1 | Conditional on run_fragment_qc=true; deepTools bamPEFragmentSize |
 
 **Tested pathway matrix:**
 
@@ -462,9 +462,9 @@ CUT&RUN and CUT&TAG analysis with Bowtie2 alignment, MACS2 peak calling (--nomod
 
 ### hic — Hi-C Chromatin Conformation Capture
 
-**Status: 1.0 — MboI/DpnII protocol tested (Docker)**
+**Status: 1.1 — Contact maps, TAD calling, A/B compartments, Juicer .hic**
 
-Hi-C chromatin interaction analysis with two-step Bowtie2 alignment, pairtools valid pair extraction and deduplication, and cooler contact map generation with ICE normalization.
+Hi-C chromatin interaction analysis with two-step Bowtie2 alignment, pairtools valid pair extraction and deduplication, cooler contact map generation with ICE normalization, optional TAD calling, A/B compartment analysis, and Juicer .hic format conversion.
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -477,9 +477,9 @@ Hi-C chromatin interaction analysis with two-step Bowtie2 alignment, pairtools v
 | cooler cload | Done | Contact matrix at specified resolution |
 | cooler zoomify | Done | Multi-resolution .mcool with ICE balancing |
 | MultiQC | Done | Integrates FastQC, fastp, Bowtie2 logs |
-| TAD calling (HiCExplorer) | Planned v1.1 | |
-| A/B compartments (cooltools) | Planned v1.1 | |
-| Juicer .hic conversion | Planned v1.1 | |
+| TAD calling (HiCExplorer) | Done v1.1 | Conditional on run_tads=true; hicFindTADs |
+| A/B compartments (cooltools) | Done v1.1 | Conditional on run_compartments=true; eigenvector decomposition |
+| Juicer .hic conversion | Done v1.1 | Conditional on run_juicer=true; juicertools pre |
 
 **Tested pathway matrix:**
 
@@ -489,9 +489,9 @@ Hi-C chromatin interaction analysis with two-step Bowtie2 alignment, pairtools v
 
 ---
 
-## v1.1 Roadmap — Additional Pathways and Tools
+## v1.1 Roadmap — Additional Pathways and Tools (Complete)
 
-Planned enhancements for each pipeline. These add alternative tool paths, specialized modes, and downstream analysis features on top of the v1.0 core.
+All v1.1 enhancements implemented. 44 features across 12 pipelines, adding alternative tool paths, specialized modes, and downstream analysis features on top of the v1.0 core.
 
 ### Variant Calling & Clinical
 
@@ -499,65 +499,65 @@ Planned enhancements for each pipeline. These add alternative tool paths, specia
 |----------|---------|--------|-------------|
 | sarek | BQSR | **Done** | Base quality score recalibration (requires known sites VCFs) |
 | sarek | Joint calling | **Done** | GenomicsDBImport + GenotypeGVCFs for multi-sample cohorts |
-| sarek | Scatter-gather | Planned | Interval-based parallelization for large genomes |
-| raredisease | DeepVariant | Planned | Alternative SNV caller |
-| raredisease | Joint calling | Planned | GenomicsDBImport + GenotypeGVCFs |
-| raredisease | SV calling (Manta) | Planned | Structural variant detection |
-| raredisease | CADD scores | Planned | Pathogenicity scoring |
-| raredisease | GENMOD ranking | Planned | Pedigree-aware variant ranking |
-| raredisease | ExpansionHunter | Planned | Repeat expansion detection |
+| sarek | Scatter-gather | **Done** | Interval-based HaplotypeCaller parallelization |
+| raredisease | DeepVariant | **Done** | Alternative SNV caller |
+| raredisease | Joint calling | **Done** | GenomicsDBImport + GenotypeGVCFs |
+| raredisease | SV calling (Manta) | **Done** | Structural variant detection |
+| raredisease | CADD scores | **Done** | Pathogenicity scoring |
+| raredisease | GENMOD ranking | **Done** | Pedigree-aware variant ranking |
+| raredisease | ExpansionHunter | **Done** | Repeat expansion detection |
 | viralrecon | Pangolin | **Done** | SARS-CoV-2 lineage assignment |
-| viralrecon | Nextclade | Planned | Multi-pathogen annotation |
+| viralrecon | Nextclade | **Done** | Multi-pathogen annotation |
 | viralrecon | bcftools path | **Done** | Alternative to iVar variant calling |
-| viralrecon | Kraken2 host filtering | Planned | Remove host reads before alignment |
+| viralrecon | Kraken2 host filtering | **Done** | Remove host reads before alignment |
 
 ### Transcriptomics & Single-Cell
 
 | Pipeline | Feature | Status | Description |
 |----------|---------|--------|-------------|
 | scrnaseq | Alevin-Fry | **Done** | Salmon-based pseudo-alignment path (simpleaf) |
-| scrnaseq | Kallisto+BUStools | Planned | Alternative quantification path |
-| scrnaseq | Smart-seq2 | Planned | Plate-based mode (no barcode demux) |
-| scrnaseq | Empty droplet detection | Planned | dropletUtils::emptyDrops (R) |
-| rnafusion | STAR-Fusion | Planned | CTAT resource bundle required |
-| rnafusion | FusionCatcher | Planned | Alternative fusion caller |
-| rnafusion | FusionInspector | Planned | Post-processing validation |
-| rnafusion | Arriba visualization | Planned | draw_fusions.R |
+| scrnaseq | Kallisto+BUStools | **Done** | Alternative quantification path |
+| scrnaseq | Smart-seq2 | **Done** | Plate-based mode (no barcode demux) |
+| scrnaseq | Empty droplet detection | **Done** | dropletUtils::emptyDrops (R) |
+| rnafusion | STAR-Fusion | **Done** | CTAT resource bundle required |
+| rnafusion | FusionCatcher | **Done** | Alternative fusion caller |
+| rnafusion | FusionInspector | **Done** | Post-processing validation |
+| rnafusion | Arriba visualization | **Done** | draw_fusions.R |
 
 ### Epigenomics & 3D Genomics
 
 | Pipeline | Feature | Status | Description |
 |----------|---------|--------|-------------|
 | methylseq | bwa-meth + MethylDackel | **Done** | Alternative aligner path |
-| methylseq | RRBS mode | Planned | Skip deduplication for reduced representation |
+| methylseq | RRBS mode | **Done** | Skip deduplication for reduced representation |
 | cutandrun | SEACR | **Done** | Alternative peak caller for CUT&RUN |
-| cutandrun | Spike-in normalization | Planned | E. coli spike-in calibration |
-| cutandrun | Fragment size QC | Planned | CUT&RUN diagnostic plots |
-| hic | TAD calling | Planned | HiCExplorer |
-| hic | A/B compartments | Planned | cooltools eigenvector decomposition |
-| hic | Juicer .hic | Planned | Convert cooler to .hic format |
+| cutandrun | Spike-in normalization | **Done** | E. coli spike-in calibration |
+| cutandrun | Fragment size QC | **Done** | CUT&RUN diagnostic plots |
+| hic | TAD calling | **Done** | HiCExplorer |
+| hic | A/B compartments | **Done** | cooltools eigenvector decomposition |
+| hic | Juicer .hic | **Done** | Convert cooler to .hic format |
 
 ### Metagenomics & Long-Read
 
 | Pipeline | Feature | Status | Description |
 |----------|---------|--------|-------------|
-| ampliseq | QIIME2 integration | Planned | Phylogenetic diversity, ordination |
+| ampliseq | QIIME2 diversity | **Done** | Phylogenetic diversity, ordination |
 | ampliseq | Single-end mode | **Done** | Optional reverse reads; DADA2 skips pair merging |
-| ampliseq | Species-level assignment | Planned | addSpecies with exact matching |
-| mag | Host read removal | Planned | Bowtie2 against host reference |
-| mag | MaxBin2 | Planned | Alternative binner |
+| ampliseq | Species-level assignment | **Done** | addSpecies with exact matching |
+| mag | Host read removal | **Done** | Bowtie2 against host reference |
+| mag | MaxBin2 | **Done** | Alternative binner |
 | mag | DAS Tool | **Done** | Bin refinement (conditional) |
 | mag | BUSCO | **Done** | Bin completeness assessment (conditional) |
-| mag | GTDB-Tk | Planned | Bin taxonomic classification |
-| mag | Prokka | Planned | Bin functional annotation |
+| mag | GTDB-Tk | **Done** | Bin taxonomic classification |
+| mag | Prokka | **Done** | Bin functional annotation |
 | taxprofiler | MetaPhlAn | **Done** | Marker-gene based profiling (conditional) |
-| taxprofiler | Centrifuge | Planned | FM-index based classification |
-| taxprofiler | Krona | Planned | Interactive taxonomy visualization |
-| taxprofiler | Taxpasta | Planned | Standardized output format |
-| nanoseq | NanoFilt | Planned | Quality filtering |
-| nanoseq | StringTie2 | Planned | Transcript assembly (RNA mode) |
+| taxprofiler | Centrifuge | **Done** | FM-index based classification |
+| taxprofiler | Krona | **Done** | Interactive taxonomy visualization |
+| taxprofiler | Taxpasta | **Done** | Standardized output format |
+| nanoseq | NanoFilt | **Done** | Quality filtering |
+| nanoseq | StringTie2 | **Done** | Transcript assembly (RNA mode) |
 | nanoseq | medaka | **Done** | Short variant calling from Nanopore |
-| nanoseq | sniffles | Planned | Structural variant detection |
+| nanoseq | Sniffles2 | **Done** | Structural variant detection |
 
 ### v2.0 (future)
 
@@ -607,7 +607,7 @@ All 16 pipelines completed in priority order, building tool reuse incrementally:
 
 ## Tool Reuse Matrix
 
-83 tools in `tools/`, shared across 16 pipelines. Core shared tools:
+119 tools in `tools/`, shared across 16 pipelines. Core shared tools:
 
 | Tool | Pipelines using it |
 |------|--------------------|
@@ -635,8 +635,10 @@ v1.1 tools added to reuse matrix:
 |------|--------------------|
 | gatk4-baserecalibrator | sarek |
 | gatk4-applybqsr | sarek |
-| gatk4-genomicsdbimport | sarek |
-| gatk4-genotypegvcfs | sarek |
+| gatk4-genomicsdbimport | sarek, raredisease |
+| gatk4-genotypegvcfs | sarek, raredisease |
+| gatk4-split-intervals | sarek |
+| gatk4-merge-vcfs | sarek |
 | medaka-variant | nanoseq |
 | simpleaf-index | scrnaseq |
 | simpleaf-quant | scrnaseq |
@@ -650,5 +652,39 @@ v1.1 tools added to reuse matrix:
 | seacr | cutandrun |
 | busco | mag |
 | das-tool | mag |
+| nanofilt | nanoseq |
+| stringtie | nanoseq |
+| sniffles | nanoseq |
+| dada2-add-species | ampliseq |
+| qiime2-diversity | ampliseq |
+| nextclade | viralrecon |
+| kraken2-filter | viralrecon |
+| centrifuge | taxprofiler |
+| centrifuge-kreport | taxprofiler |
+| krona | taxprofiler |
+| taxpasta | taxprofiler |
+| bowtie2-spikein | cutandrun |
+| compute-spikein-scale-factors | cutandrun |
+| deeptools-bamcoverage-scaled | cutandrun |
+| deeptools-bampe-fragmentsize | cutandrun |
+| hicexplorer-find-tads | hic |
+| cooltools-eigs | hic |
+| juicertools-pre | hic |
+| bowtie2-host-filter | mag |
+| maxbin2 | mag |
+| gtdbtk | mag |
+| prokka | mag |
+| deepvariant | raredisease |
+| manta | raredisease |
+| bcftools-annotate-cadd | raredisease |
+| genmod | raredisease |
+| expansionhunter | raredisease |
+| kb-ref | scrnaseq |
+| kb-count | scrnaseq |
+| droplet-utils | scrnaseq |
+| star-fusion | rnafusion |
+| fusioncatcher | rnafusion |
+| fusion-inspector | rnafusion |
+| arriba-visualization | rnafusion |
 
-Pipeline-specific tools: STARsolo, Cutadapt, DADA2, SPAdes, MEGAHIT, MetaBAT2, Prodigal, QUAST, Kraken2, Bracken, minimap2, NanoPlot, Arriba, star-align-fusion, Ensembl VEP, iVar, Bismark, hic-mapping, pairtools, cooler, medaka, simpleaf, MetaPhlAn, bwa-meth, MethylDackel, Pangolin, SEACR, BUSCO, DAS Tool.
+Pipeline-specific tools: STARsolo, Cutadapt, DADA2, SPAdes, MEGAHIT, MetaBAT2, Prodigal, QUAST, Kraken2, Bracken, minimap2, NanoPlot, Arriba, star-align-fusion, Ensembl VEP, iVar, Bismark, hic-mapping, pairtools, cooler, medaka, simpleaf, MetaPhlAn, bwa-meth, MethylDackel, Pangolin, SEACR, BUSCO, DAS Tool, NanoFilt, StringTie, Sniffles, STAR-Fusion, FusionCatcher, FusionInspector, Nextclade, Centrifuge, Krona, Taxpasta, DeepVariant, Manta, GENMOD, ExpansionHunter, Kallisto/BUStools, QIIME2.

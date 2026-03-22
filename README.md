@@ -26,8 +26,8 @@ All 16 pipelines implemented and tested. Functional specifications derived from 
 | Workflow | Description | Key Tools |
 |----------|-------------|-----------|
 | [rnaseq](workflows/rnaseq/) | RNA-seq quantification (4 pathways) | STAR, HISAT2, Salmon, RSEM, kallisto |
-| [scrnaseq](workflows/scrnaseq/) | Single-cell RNA-seq (10x, Drop-seq) | STARsolo, Alevin-Fry |
-| [rnafusion](workflows/rnafusion/) | Gene fusion detection | STAR (chimeric), Arriba |
+| [scrnaseq](workflows/scrnaseq/) | Single-cell RNA-seq (10x, Drop-seq, Smart-seq2) | STARsolo, Alevin-Fry, Kallisto/BUStools |
+| [rnafusion](workflows/rnafusion/) | Gene fusion detection | STAR-Fusion, Arriba, FusionCatcher, FusionInspector |
 
 ### Epigenomics
 
@@ -35,33 +35,33 @@ All 16 pipelines implemented and tested. Functional specifications derived from 
 |----------|-------------|-----------|
 | [chipseq](workflows/chipseq/) | ChIP-seq peak calling | BWA-MEM2, MACS2, deepTools |
 | [atacseq](workflows/atacseq/) | ATAC-seq chromatin accessibility | BWA-MEM2, MACS2 (--nomodel) |
-| [methylseq](workflows/methylseq/) | Bisulfite-seq methylation | Bismark, bwa-meth |
-| [cutandrun](workflows/cutandrun/) | CUT&RUN/CUT&TAG peak calling | Bowtie2, MACS2, SEACR, deepTools |
+| [methylseq](workflows/methylseq/) | Bisulfite-seq methylation (RRBS) | Bismark, bwa-meth |
+| [cutandrun](workflows/cutandrun/) | CUT&RUN/CUT&TAG peak calling | Bowtie2, MACS2, SEACR, spike-in normalization |
 
 ### Variant Calling
 
 | Workflow | Description | Key Tools |
 |----------|-------------|-----------|
-| [sarek](workflows/sarek/) | Germline variant calling | BWA-MEM2, GATK4 (BQSR, HC, joint calling) |
-| [raredisease](workflows/raredisease/) | Rare disease variant annotation | sarek + Ensembl VEP |
-| [viralrecon](workflows/viralrecon/) | Viral variant calling and consensus | BWA-MEM2, iVar, bcftools, Pangolin |
+| [sarek](workflows/sarek/) | Germline variant calling | BWA-MEM2, GATK4 (BQSR, HC, joint calling, scatter) |
+| [raredisease](workflows/raredisease/) | Rare disease variant annotation | sarek + VEP, DeepVariant, Manta, GENMOD |
+| [viralrecon](workflows/viralrecon/) | Viral variant calling and consensus | BWA-MEM2, iVar, bcftools, Pangolin, Nextclade |
 
 ### Metagenomics
 
 | Workflow | Description | Key Tools |
 |----------|-------------|-----------|
-| [ampliseq](workflows/ampliseq/) | 16S/ITS amplicon sequencing (PE+SE) | Cutadapt, DADA2 |
-| [mag](workflows/mag/) | Metagenome-assembled genomes | SPAdes, MetaBAT2, DAS Tool, BUSCO |
-| [taxprofiler](workflows/taxprofiler/) | Taxonomic profiling | Kraken2, Bracken, MetaPhlAn |
+| [ampliseq](workflows/ampliseq/) | 16S/ITS amplicon sequencing (PE+SE) | Cutadapt, DADA2, QIIME2 |
+| [mag](workflows/mag/) | Metagenome-assembled genomes | SPAdes, MetaBAT2, MaxBin2, DAS Tool, BUSCO, GTDB-Tk |
+| [taxprofiler](workflows/taxprofiler/) | Taxonomic profiling | Kraken2, Bracken, MetaPhlAn, Centrifuge, Krona |
 
 ### Long-Read & 3D Genomics
 
 | Workflow | Description | Key Tools |
 |----------|-------------|-----------|
-| [nanoseq](workflows/nanoseq/) | Nanopore long-read sequencing | minimap2, NanoPlot, medaka |
-| [hic](workflows/hic/) | Hi-C chromatin conformation | Bowtie2 (two-step), pairtools, cooler |
+| [nanoseq](workflows/nanoseq/) | Nanopore long-read sequencing | minimap2, NanoPlot, medaka, Sniffles2, StringTie2 |
+| [hic](workflows/hic/) | Hi-C chromatin conformation | Bowtie2, pairtools, cooler, HiCExplorer, cooltools |
 
-83 CWL tools in `tools/`, shared across pipelines. See [pipeline roadmap](docs/pipeline-roadmap.md) for detailed feature tables and test matrices.
+119 CWL tools in `tools/`, shared across pipelines. See [pipeline roadmap](docs/pipeline-roadmap.md) for detailed feature tables and test matrices.
 
 ## For AI Agents
 
@@ -96,7 +96,7 @@ cwltool workflows/rnaseq/main.cwl workflows/rnaseq/examples/star-salmon.yaml
 ## Roadmap
 
 - **Phase 1** — 16 core pipelines (fetchngs through hic) — **Complete**
-- **Phase 2** — v1.1 enhancements — **10 of 40+ features shipped** (BQSR, joint calling, medaka, Alevin-Fry, MetaPhlAn, bwa-meth, bcftools+Pangolin, SE ampliseq, SEACR, BUSCO+DAS Tool)
+- **Phase 2** — v1.1 enhancements — **Complete** (44 features across 12 pipelines, 119 tools)
 - **Phase 3** — MCP server for agent discovery, Python client library
 - **Phase 4** — Community contributions, workflow template generator
 
