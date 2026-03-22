@@ -73,7 +73,7 @@ requirements:
             fi
             CMD="$CMD $GFF_FLAG $LOCAL_GFF"
           else
-            CMD="$CMD --offline --no_cache --dir_cache /tmp"
+            CMD="$CMD --offline --dir /tmp"
           fi
 
           eval $CMD

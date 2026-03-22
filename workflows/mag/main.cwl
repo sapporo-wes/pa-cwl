@@ -123,15 +123,9 @@ steps:
         InlineJavascriptRequirement: {}
       inputs:
         filtered_fwd:
-          type:
-            - "null"
-            - type: array
-              items: File
+          type: Any
         filtered_rev:
-          type:
-            - "null"
-            - type: array
-              items: File
+          type: Any
         trimmed_fwd:
           type: File[]
         trimmed_rev:
@@ -143,8 +137,9 @@ steps:
           type: File[]
       expression: |
         ${
-          if (inputs.filtered_fwd !== null && Array.isArray(inputs.filtered_fwd) && inputs.filtered_fwd.length > 0 && inputs.filtered_fwd[0] !== null) {
-            return {fwd: inputs.filtered_fwd, rev: inputs.filtered_rev};
+          var ff = inputs.filtered_fwd;
+          if (ff !== null && Array.isArray(ff) && ff.length > 0 && ff[0] !== null) {
+            return {fwd: ff, rev: inputs.filtered_rev};
           }
           return {fwd: inputs.trimmed_fwd, rev: inputs.trimmed_rev};
         }

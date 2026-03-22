@@ -42,11 +42,13 @@ inputs:
 
   # === Samples (Smart-seq2 plate-based) ===
   fastq_fwd:
-    type: File[]?
+    type: File[]
+    default: []
     doc: "Forward reads for Smart-seq2, one per sample/well"
 
   fastq_rev:
-    type: File[]?
+    type: File[]
+    default: []
     doc: "Reverse reads for Smart-seq2, one per sample/well"
 
   # === Reference genome ===
@@ -166,7 +168,7 @@ steps:
   fastqc_smartseq2_fwd:
     run: ../../tools/fastqc.cwl
     scatter: fastq
-    when: $(inputs.fastq != null)
+    when: $(inputs.fastq != null && inputs.fastq.length > 0)
     in:
       fastq: fastq_fwd
     out: [html_report, zip_report]
@@ -177,7 +179,7 @@ steps:
   fastqc_smartseq2_rev:
     run: ../../tools/fastqc.cwl
     scatter: fastq
-    when: $(inputs.fastq != null)
+    when: $(inputs.fastq != null && inputs.fastq.length > 0)
     in:
       fastq: fastq_rev
     out: [html_report, zip_report]

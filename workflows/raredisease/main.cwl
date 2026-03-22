@@ -225,6 +225,7 @@ steps:
   # =====================
   vep:
     run: ../../tools/ensembl-vep.cwl
+    when: $(inputs.cache_dir != null || inputs.gff != null)
     scatter: [vcf, prefix]
     scatterMethod: dotproduct
     in:

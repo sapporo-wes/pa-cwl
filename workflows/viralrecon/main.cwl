@@ -144,6 +144,45 @@ steps:
     out: [filtered_fwd, filtered_rev, kraken2_reports]
 
   # =====================
+  # Select reads (host-filtered or trimmed)
+  # =====================
+  select_reads:
+    run:
+      class: ExpressionTool
+      requirements:
+        InlineJavascriptRequirement: {}
+      inputs:
+        filtered_fwd:
+          type: Any
+          default: null
+        filtered_rev:
+          type: Any
+          default: null
+        trimmed_fwd:
+          type: File[]
+        trimmed_rev:
+          type: Any
+      outputs:
+        fwd:
+          type: File[]
+        rev:
+          type: File[]
+      expression: |
+        ${
+          var ff = inputs.filtered_fwd;
+          if (ff !== null && Array.isArray(ff) && ff.length > 0 && ff[0] !== null) {
+            return {fwd: ff, rev: inputs.filtered_rev};
+          }
+          return {fwd: inputs.trimmed_fwd, rev: inputs.trimmed_rev};
+        }
+    in:
+      filtered_fwd: kraken2_host_filter/filtered_fwd
+      filtered_rev: kraken2_host_filter/filtered_rev
+      trimmed_fwd: qc_trim/trimmed_fwd
+      trimmed_rev: qc_trim/trimmed_rev
+    out: [fwd, rev]
+
+  # =====================
   # Alignment (per sample)
   # =====================
   align:
@@ -151,16 +190,8 @@ steps:
     scatter: [fastq_fwd, fastq_rev, sample_id]
     scatterMethod: dotproduct
     in:
-      fastq_fwd:
-        source:
-          - kraken2_host_filter/filtered_fwd
-          - qc_trim/trimmed_fwd
-        pickValue: first_non_null
-      fastq_rev:
-        source:
-          - kraken2_host_filter/filtered_rev
-          - qc_trim/trimmed_rev
-        valueFrom: "$(self[0] !== null ? self[0] : self[1])"
+      fastq_fwd: select_reads/fwd
+      fastq_rev: select_reads/rev
       sample_id: sample_ids
       genome_fasta:
         source:

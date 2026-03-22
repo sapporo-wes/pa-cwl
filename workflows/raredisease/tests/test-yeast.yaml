@@ -16,4 +16,6 @@ genome_fasta:
   class: File
   path: ../../../test-data/yeast/genome.fa
 
-# No VEP cache for yeast - VEP will run in minimal mode
+vep_gff:
+  class: File
+  path: ../../../test-data/yeast/genes.gtf
