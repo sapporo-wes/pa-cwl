@@ -5,7 +5,9 @@ class: Workflow
 label: "rnafusion - Gene fusion detection pipeline"
 doc: |
   Gene fusion detection from RNA-seq data using STAR alignment with
-  chimeric detection and Arriba fusion calling.
+  chimeric detection and Arriba fusion calling. Optional callers include
+  STAR-Fusion and FusionCatcher. Post-processing validation with
+  FusionInspector and Arriba visualization are also available.
 
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
@@ -56,6 +58,42 @@ inputs:
     type: File?
     doc: "Arriba protein domain annotation (GFF3)"
 
+  # === STAR-Fusion ===
+  run_star_fusion:
+    type: boolean?
+    default: false
+    doc: "Run STAR-Fusion fusion caller on chimeric junctions"
+
+  ctat_lib:
+    type: Directory?
+    doc: "CTAT genome library directory (required for STAR-Fusion and FusionInspector)"
+
+  # === FusionCatcher ===
+  run_fusioncatcher:
+    type: boolean?
+    default: false
+    doc: "Run FusionCatcher fusion caller"
+
+  fusioncatcher_db:
+    type: Directory?
+    doc: "FusionCatcher data directory (required for FusionCatcher)"
+
+  # === FusionInspector ===
+  run_fusion_inspector:
+    type: boolean?
+    default: false
+    doc: "Run FusionInspector for post-processing validation of fusions"
+
+  # === Arriba visualization ===
+  run_arriba_viz:
+    type: boolean?
+    default: false
+    doc: "Generate Arriba fusion visualization PDFs"
+
+  arriba_cytobands:
+    type: File?
+    doc: "Cytoband annotation TSV for Arriba visualization"
+
 steps:
   # =====================
   # FastQC on raw reads
@@ -92,7 +130,7 @@ steps:
       fastq_rev: fastp/trimmed_rev
       sample_id: sample_ids
       index_dir: star_index
-    out: [aligned_bam, log_final, log, splice_junctions]
+    out: [aligned_bam, log_final, log, splice_junctions, chimeric_junctions]
 
   # =====================
   # Arriba fusion detection (per sample)
@@ -120,6 +158,63 @@ steps:
     in:
       sorted_bam: star/aligned_bam
     out: [indexed_bam]
+
+  # =====================
+  # STAR-Fusion (conditional)
+  # =====================
+  star_fusion:
+    run: steps/star-fusion.cwl
+    when: $(inputs.run_star_fusion == true && inputs.ctat_lib != null)
+    in:
+      chimeric_junctions: star/chimeric_junctions
+      ctat_lib: ctat_lib
+      sample_ids: sample_ids
+      run_star_fusion: run_star_fusion
+    out: [fusion_predictions, fusion_predictions_abridged]
+
+  # =====================
+  # FusionCatcher (conditional)
+  # =====================
+  fusioncatcher:
+    run: steps/fusioncatcher.cwl
+    when: $(inputs.run_fusioncatcher == true && inputs.fusioncatcher_db != null)
+    in:
+      fastq_fwd: fastp/trimmed_fwd
+      fastq_rev: fastp/trimmed_rev
+      fusioncatcher_db: fusioncatcher_db
+      sample_ids: sample_ids
+      run_fusioncatcher: run_fusioncatcher
+    out: [final_fusions, summaries]
+
+  # =====================
+  # FusionInspector (conditional)
+  # =====================
+  fusion_inspector:
+    run: steps/fusion-inspector.cwl
+    when: $(inputs.run_fusion_inspector == true && inputs.ctat_lib != null)
+    in:
+      fusions_files: arriba/fusions
+      ctat_lib: ctat_lib
+      fastq_fwd: fastp/trimmed_fwd
+      fastq_rev: fastp/trimmed_rev
+      sample_ids: sample_ids
+      run_fusion_inspector: run_fusion_inspector
+    out: [validated_fusions, evidence_bams]
+
+  # =====================
+  # Arriba visualization (conditional)
+  # =====================
+  arriba_visualization:
+    run: steps/arriba-visualization.cwl
+    when: $(inputs.run_arriba_viz == true)
+    in:
+      fusions_tsvs: arriba/fusions
+      bams: samtools_index/indexed_bam
+      gtf: gtf
+      sample_ids: sample_ids
+      cytobands: arriba_cytobands
+      run_arriba_viz: run_arriba_viz
+    out: [fusions_pdfs]
 
   # =====================
   # MultiQC reporting
@@ -158,3 +253,42 @@ outputs:
     type: File
     outputSource: multiqc/html_report
     doc: "MultiQC HTML report"
+
+  # === STAR-Fusion outputs ===
+  star_fusion_predictions:
+    type: File[]?
+    outputSource: star_fusion/fusion_predictions
+    doc: "STAR-Fusion predicted gene fusions (when run_star_fusion=true)"
+
+  star_fusion_predictions_abridged:
+    type: File[]?
+    outputSource: star_fusion/fusion_predictions_abridged
+    doc: "Abridged STAR-Fusion predictions (when run_star_fusion=true)"
+
+  # === FusionCatcher outputs ===
+  fusioncatcher_fusions:
+    type: File[]?
+    outputSource: fusioncatcher/final_fusions
+    doc: "FusionCatcher final fusion candidates (when run_fusioncatcher=true)"
+
+  fusioncatcher_summaries:
+    type: File[]?
+    outputSource: fusioncatcher/summaries
+    doc: "FusionCatcher fusion summaries (when run_fusioncatcher=true)"
+
+  # === FusionInspector outputs ===
+  validated_fusions:
+    type: File[]?
+    outputSource: fusion_inspector/validated_fusions
+    doc: "FusionInspector validated fusions (when run_fusion_inspector=true)"
+
+  fusion_evidence_bams:
+    type: File[]?
+    outputSource: fusion_inspector/evidence_bams
+    doc: "FusionInspector evidence BAMs (when run_fusion_inspector=true)"
+
+  # === Arriba visualization outputs ===
+  arriba_fusion_plots:
+    type: File[]?
+    outputSource: arriba_visualization/fusions_pdfs
+    doc: "Arriba fusion visualization PDFs (when run_arriba_viz=true)"

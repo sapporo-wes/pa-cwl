@@ -44,6 +44,13 @@ inputs:
       prefix: --paired
     doc: "Enable paired-end mode"
 
+  rrbs:
+    type: boolean?
+    default: false
+    inputBinding:
+      prefix: --rrbs
+    doc: "Enable RRBS-specific trimming (MspI digested material)"
+
 outputs:
   trimmed_fwd:
     type: File

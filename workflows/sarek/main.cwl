@@ -76,6 +76,12 @@ inputs:
       - .tbi
     doc: "Known variant sites VCFs for BQSR (dbSNP, Mills indels). BQSR is skipped if not provided."
 
+  # === Scatter-gather parallelism ===
+  scatter_count:
+    type: int?
+    default: 1
+    doc: "Number of genomic interval shards for scatter-gather HaplotypeCaller (1 = no scatter)"
+
   # === Tool options ===
   trimmer:
     type:
@@ -195,10 +201,23 @@ steps:
     out: [bams]
 
   # =====================
-  # GATK HaplotypeCaller
+  # Split intervals for scatter-gather (conditional)
+  # =====================
+  split_intervals:
+    run: ../../tools/gatk4-split-intervals.cwl
+    when: $(inputs.scatter_count != null && inputs.scatter_count > 1)
+    in:
+      reference: prepare_reference/reference
+      intervals: intervals
+      scatter_count: scatter_count
+    out: [interval_files]
+
+  # =====================
+  # GATK HaplotypeCaller — direct (when scatter disabled)
   # =====================
   haplotypecaller:
     run: ../../tools/gatk4-haplotypecaller.cwl
+    when: $(inputs.scatter_count == null || inputs.scatter_count <= 1)
     scatter: [bam, sample_id]
     scatterMethod: dotproduct
     in:
@@ -208,7 +227,59 @@ steps:
       intervals: intervals
       sample_id: sample_ids
       emit_gvcf: emit_gvcf
+      scatter_count: scatter_count
     out: [vcf]
+
+  # =====================
+  # GATK HaplotypeCaller — scatter-gather (when scatter enabled)
+  # =====================
+  haplotypecaller_scatter:
+    run: steps/haplotypecaller-scatter.cwl
+    when: $(inputs.scatter_count != null && inputs.scatter_count > 1)
+    scatter: [bam, sample_id]
+    scatterMethod: dotproduct
+    in:
+      bam: select_bam/bams
+      reference: prepare_reference/reference
+      dbsnp: dbsnp
+      interval_files: split_intervals/interval_files
+      sample_id: sample_ids
+      emit_gvcf: emit_gvcf
+      scatter_count: scatter_count
+    out: [vcf]
+
+  # =====================
+  # Select VCF (from direct or scatter HaplotypeCaller)
+  # =====================
+  select_vcf:
+    run:
+      class: ExpressionTool
+      requirements:
+        InlineJavascriptRequirement: {}
+      inputs:
+        direct_vcfs:
+          type: Any
+        scatter_vcfs:
+          type: Any
+      outputs:
+        vcfs:
+          type: File[]
+      expression: |
+        ${
+          var direct = inputs.direct_vcfs;
+          if (direct !== null && Array.isArray(direct) && direct.length > 0 && direct[0] !== null) {
+            return {vcfs: direct};
+          }
+          var scatter = inputs.scatter_vcfs;
+          if (scatter !== null && Array.isArray(scatter) && scatter.length > 0 && scatter[0] !== null) {
+            return {vcfs: scatter};
+          }
+          return {vcfs: []};
+        }
+    in:
+      direct_vcfs: haplotypecaller/vcf
+      scatter_vcfs: haplotypecaller_scatter/vcf
+    out: [vcfs]
 
   # =====================
   # Joint calling (conditional — runs when emit_gvcf=true)
@@ -217,7 +288,7 @@ steps:
     run: steps/joint-calling.cwl
     when: $(inputs.emit_gvcf == true)
     in:
-      gvcfs: haplotypecaller/vcf
+      gvcfs: select_vcf/vcfs
       reference: prepare_reference/reference
       dbsnp: dbsnp
       intervals: intervals
@@ -256,7 +327,7 @@ steps:
     scatter: [vcf, sample_id]
     scatterMethod: dotproduct
     in:
-      vcf: haplotypecaller/vcf
+      vcf: select_vcf/vcfs
       reference: prepare_reference/reference
       sample_id: sample_ids
     out: [filtered_vcf]
@@ -302,7 +373,7 @@ outputs:
 
   raw_vcfs:
     type: File[]
-    outputSource: haplotypecaller/vcf
+    outputSource: select_vcf/vcfs
     doc: "Raw HaplotypeCaller VCF files per sample"
 
   aligned_bams:

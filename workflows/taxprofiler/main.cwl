@@ -6,7 +6,8 @@ label: "taxprofiler - Taxonomic profiling pipeline"
 doc: |
   Taxonomic classification and abundance estimation pipeline.
   Uses Kraken2 for classification and Bracken for abundance re-estimation,
-  with optional MetaPhlAn marker-gene profiling.
+  with optional MetaPhlAn marker-gene profiling, Centrifuge classification,
+  Krona visualization, and taxpasta profile standardization.
 
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
@@ -55,6 +56,27 @@ inputs:
   metaphlan_index:
     type: string?
     doc: "MetaPhlAn database index name (default: latest in db dir)"
+
+  # === Centrifuge (optional) ===
+  centrifuge_db:
+    type: File[]?
+    doc: "Centrifuge index files (.cf files). Centrifuge is skipped if not provided."
+
+  centrifuge_index_base:
+    type: string?
+    doc: "Base name of the Centrifuge index"
+
+  # === Krona (optional) ===
+  run_krona:
+    type: boolean?
+    default: false
+    doc: "Generate interactive Krona HTML visualization from Kraken2 reports"
+
+  # === taxpasta (optional) ===
+  run_taxpasta:
+    type: boolean?
+    default: false
+    doc: "Merge and standardize Kraken2/Bracken profiles with taxpasta"
 
 steps:
   # =====================
@@ -126,6 +148,46 @@ steps:
     out: [profile, sam]
 
   # =====================
+  # Centrifuge classification (conditional — runs when centrifuge_db provided)
+  # =====================
+  centrifuge:
+    run: steps/centrifuge-classify.cwl
+    when: $(inputs.centrifuge_db != null)
+    in:
+      fastq_fwd: fastp/trimmed_fwd
+      fastq_rev: fastp/trimmed_rev
+      sample_ids: sample_ids
+      index_base: centrifuge_index_base
+      index_files: centrifuge_db
+      centrifuge_db: centrifuge_db
+    out: [classifications, reports, kreports]
+
+  # =====================
+  # Krona visualization (conditional — runs when run_krona is true)
+  # =====================
+  krona:
+    run: ../../tools/krona.cwl
+    when: $(inputs.run_krona == true)
+    in:
+      reports: kraken2/report
+      sample_ids: sample_ids
+      run_krona: run_krona
+    out: [html]
+
+  # =====================
+  # taxpasta standardization (conditional — runs when run_taxpasta is true)
+  # =====================
+  taxpasta:
+    run: ../../tools/taxpasta.cwl
+    when: $(inputs.run_taxpasta == true)
+    in:
+      reports: kraken2/report
+      profiler:
+        default: "kraken2"
+      run_taxpasta: run_taxpasta
+    out: [merged_profile]
+
+  # =====================
   # MultiQC reporting
   # =====================
   multiqc:
@@ -158,6 +220,31 @@ outputs:
     type: File[]?
     outputSource: metaphlan/profile
     doc: "MetaPhlAn taxonomic profiles (when metaphlan_db provided)"
+
+  centrifuge_classifications:
+    type: File[]?
+    outputSource: centrifuge/classifications
+    doc: "Centrifuge per-read classifications (when centrifuge_db provided)"
+
+  centrifuge_reports:
+    type: File[]?
+    outputSource: centrifuge/reports
+    doc: "Centrifuge summary reports (when centrifuge_db provided)"
+
+  centrifuge_kreports:
+    type: File[]?
+    outputSource: centrifuge/kreports
+    doc: "Kraken-style reports from Centrifuge (when centrifuge_db provided)"
+
+  krona_html:
+    type: File?
+    outputSource: krona/html
+    doc: "Interactive Krona HTML visualization (when run_krona=true)"
+
+  taxpasta_merged:
+    type: File?
+    outputSource: taxpasta/merged_profile
+    doc: "Standardized merged taxonomic profile (when run_taxpasta=true)"
 
   multiqc_report:
     type: File

@@ -65,6 +65,36 @@ inputs:
     default: "5000,10000,25000,50000,100000,250000,500000,1000000"
     doc: "Comma-separated list of resolutions for multi-resolution mcool"
 
+  # === Optional analysis features ===
+  run_tad_calling:
+    type: boolean?
+    default: false
+    doc: "Run TAD calling with HiCExplorer hicFindTADs"
+
+  run_compartments:
+    type: boolean?
+    default: false
+    doc: "Run A/B compartment calling with cooltools eigs-cis"
+
+  compartment_resolution:
+    type: int?
+    default: 100000
+    doc: "Resolution for A/B compartment calling (bp)"
+
+  genome_gc:
+    type: File?
+    doc: "Optional GC content track for phasing compartment eigenvectors"
+
+  run_juicer:
+    type: boolean?
+    default: false
+    doc: "Convert pairs to Juicer .hic format"
+
+  juicer_resolutions:
+    type: string?
+    default: "1000,5000,10000,25000,50000,100000"
+    doc: "Comma-separated resolutions for .hic file generation"
+
 steps:
   # =====================
   # FastQC on raw reads
@@ -147,6 +177,54 @@ steps:
     out: [mcool]
 
   # =====================
+  # TAD calling with HiCExplorer (conditional, per sample)
+  # =====================
+  hicexplorer_find_tads:
+    run: ../../tools/hicexplorer-find-tads.cwl
+    when: $(inputs.run_tad_calling == true)
+    scatter: [cool_matrix, prefix]
+    scatterMethod: dotproduct
+    in:
+      cool_matrix: cooler_cload/cool
+      prefix: sample_ids
+      run_tad_calling: run_tad_calling
+    out: [tad_boundaries, tad_domains, tad_scores, insulation_score]
+
+  # =====================
+  # A/B compartment calling with cooltools (conditional, per sample)
+  # =====================
+  cooltools_eigs:
+    run: ../../tools/cooltools-eigs.cwl
+    when: $(inputs.run_compartments == true)
+    scatter: [mcool, prefix]
+    scatterMethod: dotproduct
+    in:
+      mcool: cooler_zoomify/mcool
+      prefix: sample_ids
+      resolution: compartment_resolution
+      n_eigs:
+        default: 3
+      genome_gc: genome_gc
+      run_compartments: run_compartments
+    out: [eigenvalues, eigenvectors]
+
+  # =====================
+  # Juicer .hic conversion (conditional, per sample)
+  # =====================
+  juicertools_pre:
+    run: ../../tools/juicertools-pre.cwl
+    when: $(inputs.run_juicer == true)
+    scatter: [pairs_file, output_name]
+    scatterMethod: dotproduct
+    in:
+      pairs_file: pairtools/valid_pairs
+      chrom_sizes: chromsizes
+      output_name: sample_ids
+      resolutions: juicer_resolutions
+      run_juicer: run_juicer
+    out: [hic_file]
+
+  # =====================
   # MultiQC reporting
   # =====================
   multiqc:
@@ -180,6 +258,41 @@ outputs:
     type: File[]
     outputSource: pairtools/valid_pairs
     doc: "Deduplicated valid pairs files"
+
+  tad_boundaries:
+    type: File[]?
+    outputSource: hicexplorer_find_tads/tad_boundaries
+    doc: "TAD boundary positions in BED format (when run_tad_calling=true)"
+
+  tad_domains:
+    type: File[]?
+    outputSource: hicexplorer_find_tads/tad_domains
+    doc: "TAD domain regions in BED format (when run_tad_calling=true)"
+
+  tad_scores:
+    type: File[]?
+    outputSource: hicexplorer_find_tads/tad_scores
+    doc: "TAD separation scores in bedGraph format (when run_tad_calling=true)"
+
+  tad_insulation_scores:
+    type: File[]?
+    outputSource: hicexplorer_find_tads/insulation_score
+    doc: "Insulation score matrices (when run_tad_calling=true)"
+
+  compartment_eigenvalues:
+    type: File[]?
+    outputSource: cooltools_eigs/eigenvalues
+    doc: "Compartment eigenvalues (when run_compartments=true)"
+
+  compartment_eigenvectors:
+    type: File[]?
+    outputSource: cooltools_eigs/eigenvectors
+    doc: "Compartment eigenvectors per genomic bin (when run_compartments=true)"
+
+  hic_files:
+    type: File[]?
+    outputSource: juicertools_pre/hic_file
+    doc: "Contact matrices in Juicer .hic format (when run_juicer=true)"
 
   multiqc_report:
     type: File

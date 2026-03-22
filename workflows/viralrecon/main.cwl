@@ -5,9 +5,10 @@ class: Workflow
 label: "viralrecon - Viral genome variant calling and consensus pipeline"
 doc: |
   Viral genome analysis pipeline for amplicon or whole-genome sequencing.
-  Performs QC, trimming, alignment, optional primer trimming, variant
-  calling (iVar + optional bcftools), consensus generation, and
-  optional Pangolin lineage assignment.
+  Performs QC, trimming, optional host filtering (Kraken2), alignment,
+  optional primer trimming, variant calling (iVar + optional bcftools),
+  consensus generation, optional Pangolin lineage assignment, and
+  optional Nextclade annotation.
 
   Designed for SARS-CoV-2 surveillance but works with any viral reference.
 
@@ -78,6 +79,22 @@ inputs:
     default: false
     doc: "Run Pangolin lineage assignment on consensus sequences"
 
+  # === Nextclade options ===
+  run_nextclade:
+    type: boolean?
+    default: false
+    doc: "Run Nextclade clade annotation on consensus sequences"
+
+  nextclade_dataset:
+    type: string?
+    default: "sars-cov-2"
+    doc: "Nextclade dataset name for clade assignment"
+
+  # === Host filtering options ===
+  kraken2_host_db:
+    type: Directory?
+    doc: "Kraken2 database for host read filtering (e.g. human). When provided, reads classified as host are removed before alignment."
+
 steps:
   # =====================
   # BWA-MEM2 index (conditional)
@@ -114,6 +131,19 @@ steps:
     out: [trimmed_fwd, trimmed_rev, fastqc_raw_zip, fastp_json]
 
   # =====================
+  # Kraken2 host filtering (conditional)
+  # =====================
+  kraken2_host_filter:
+    run: steps/kraken2-host-filter.cwl
+    when: $(inputs.kraken2_host_db != null)
+    in:
+      trimmed_fwd: qc_trim/trimmed_fwd
+      trimmed_rev: qc_trim/trimmed_rev
+      sample_ids: sample_ids
+      kraken2_host_db: kraken2_host_db
+    out: [filtered_fwd, filtered_rev, kraken2_reports]
+
+  # =====================
   # Alignment (per sample)
   # =====================
   align:
@@ -121,8 +151,16 @@ steps:
     scatter: [fastq_fwd, fastq_rev, sample_id]
     scatterMethod: dotproduct
     in:
-      fastq_fwd: qc_trim/trimmed_fwd
-      fastq_rev: qc_trim/trimmed_rev
+      fastq_fwd:
+        source:
+          - kraken2_host_filter/filtered_fwd
+          - qc_trim/trimmed_fwd
+        pickValue: first_non_null
+      fastq_rev:
+        source:
+          - kraken2_host_filter/filtered_rev
+          - qc_trim/trimmed_rev
+        valueFrom: "$(self[0] !== null ? self[0] : self[1])"
       sample_id: sample_ids
       genome_fasta:
         source:
@@ -215,6 +253,19 @@ steps:
     out: [lineage_reports]
 
   # =====================
+  # Nextclade annotation (conditional)
+  # =====================
+  nextclade_annotation:
+    run: steps/nextclade-annotation.cwl
+    when: $(inputs.run_nextclade == true)
+    in:
+      consensus_fastas: ivar_consensus/consensus_fasta
+      sample_ids: sample_ids
+      dataset_name: nextclade_dataset
+      run_nextclade: run_nextclade
+    out: [clade_tsvs, aligned_fastas, json_results]
+
+  # =====================
   # Alignment stats (per sample)
   # =====================
   samtools_stats:
@@ -239,6 +290,7 @@ steps:
           - align/markdup_metrics
           - samtools_stats/stats
           - bcftools_variants/stats
+          - kraken2_host_filter/kraken2_reports
         linkMerge: merge_flattened
         pickValue: all_non_null
       title:
@@ -270,6 +322,26 @@ outputs:
     type: File[]?
     outputSource: pangolin_lineage/lineage_reports
     doc: "Pangolin lineage assignment reports (when run_pangolin=true)"
+
+  nextclade_clade_tsvs:
+    type: File[]?
+    outputSource: nextclade_annotation/clade_tsvs
+    doc: "Nextclade clade assignment TSVs (when run_nextclade=true)"
+
+  nextclade_aligned_fastas:
+    type: File[]?
+    outputSource: nextclade_annotation/aligned_fastas
+    doc: "Nextclade reference-aligned FASTAs (when run_nextclade=true)"
+
+  nextclade_json_results:
+    type: File[]?
+    outputSource: nextclade_annotation/json_results
+    doc: "Nextclade full results in JSON (when run_nextclade=true)"
+
+  kraken2_host_reports:
+    type: File[]?
+    outputSource: kraken2_host_filter/kraken2_reports
+    doc: "Kraken2 host filtering reports (when kraken2_host_db is provided)"
 
   multiqc_report:
     type: File

@@ -49,6 +49,12 @@ inputs:
     default: trim_galore
     doc: "Read trimming tool (trim_galore is standard for bisulfite)"
 
+  # === Protocol ===
+  rrbs:
+    type: boolean?
+    default: false
+    doc: "RRBS mode: activates --rrbs trimming and skips deduplication (Bismark path)"
+
   # === Aligner ===
   aligner:
     type: string
@@ -68,6 +74,7 @@ steps:
       fastq_rev: fastq_rev
       sample_id: sample_ids
       trimmer: trimmer
+      rrbs: rrbs
     out: [trimmed_fwd, trimmed_rev, fastqc_raw_zip, fastp_json]
 
   # =====================
@@ -83,6 +90,7 @@ steps:
       fastq_rev: qc_trim/trimmed_rev
       sample_ids: sample_ids
       aligner: aligner
+      rrbs: rrbs
     out: [sorted_bams, bedgraphs, alignment_reports, dedup_reports,
           mbias_reports, splitting_reports, coverage_files, cytosine_reports]
 
@@ -174,7 +182,7 @@ outputs:
   sorted_bams:
     type: File[]
     outputSource: select_outputs/bams
-    doc: "Sorted, deduplicated BAM files"
+    doc: "Sorted BAM files (deduplicated unless RRBS mode)"
 
   bedgraphs:
     type: File[]

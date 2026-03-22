@@ -22,6 +22,11 @@ inputs:
       symbols: [trim_galore, fastp, skip]
     default: trim_galore
 
+  rrbs:
+    type: boolean?
+    default: false
+    doc: "Enable RRBS-specific trimming in Trim Galore"
+
 steps:
   fastqc_raw:
     run: ../../../tools/fastqc.cwl
@@ -36,6 +41,7 @@ steps:
       fastq_fwd: fastq_fwd
       fastq_rev: fastq_rev
       trimmer: trimmer
+      rrbs: rrbs
     out: [trimmed_fwd, trimmed_rev, trimming_report_fwd]
 
   fastp:

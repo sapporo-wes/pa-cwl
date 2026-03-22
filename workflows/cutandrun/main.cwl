@@ -8,6 +8,8 @@ doc: |
   MACS2 peak calling (--nomodel), and bigWig coverage track generation.
   Supports optional IgG control for background subtraction.
   Optional SEACR peak calling for CUT&RUN-optimized analysis.
+  Optional E. coli spike-in normalization for calibrated bigWig tracks.
+  Fragment size distribution QC for CUT&RUN quality assessment.
 
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
@@ -91,6 +93,21 @@ inputs:
   seacr_control_bedgraph:
     type: File?
     doc: "Pre-generated IgG control bedGraph for SEACR (optional, uses threshold if omitted)"
+
+  # === Spike-in normalization (optional) ===
+  spikein_index_files:
+    type: File[]?
+    doc: "Bowtie2 index files for spike-in genome (e.g., E. coli). Enables spike-in normalization when provided."
+
+  spikein_index_base:
+    type: string?
+    doc: "Bowtie2 index base name for spike-in genome"
+
+  # === Fragment size QC ===
+  run_fragment_qc:
+    type: boolean?
+    default: true
+    doc: "Run fragment size distribution QC (default true, almost always wanted for CUT&RUN)"
 
 steps:
   # =====================
@@ -211,6 +228,33 @@ steps:
     out: [bigwig]
 
   # =====================
+  # Spike-in normalization (conditional)
+  # =====================
+  spikein_normalize:
+    run: steps/spikein-normalize.cwl
+    when: $(inputs.spikein_index_files != null)
+    in:
+      fastq_fwd: fastp/trimmed_fwd
+      fastq_rev: fastp/trimmed_rev
+      bams: index_filtered/indexed_bam
+      sample_ids: sample_ids
+      spikein_index_files: spikein_index_files
+      spikein_index_base: spikein_index_base
+    out: [scaled_bigwigs, spikein_stats, spikein_logs, scale_factors_table]
+
+  # =====================
+  # Fragment size QC (conditional)
+  # =====================
+  fragment_qc:
+    run: ../../tools/deeptools-bampe-fragmentsize.cwl
+    when: $(inputs.run_fragment_qc == true)
+    in:
+      bams: index_filtered/indexed_bam
+      sample_ids: sample_ids
+      run_fragment_qc: run_fragment_qc
+    out: [histogram, table]
+
+  # =====================
   # MultiQC reporting
   # =====================
   multiqc:
@@ -252,6 +296,33 @@ outputs:
     type: File[]?
     outputSource: seacr_peaks/peaks
     doc: "SEACR peak calls in BED format (when run_seacr=true)"
+
+  # === Spike-in normalization outputs ===
+  scaled_bigwigs:
+    type: File[]?
+    outputSource: spikein_normalize/scaled_bigwigs
+    doc: "Spike-in normalized bigWig coverage tracks (when spike-in index provided)"
+
+  spikein_stats:
+    type: File[]?
+    outputSource: spikein_normalize/spikein_stats
+    doc: "Spike-in alignment count stats per sample"
+
+  spikein_scale_factors:
+    type: File?
+    outputSource: spikein_normalize/scale_factors_table
+    doc: "Table of spike-in counts and computed scale factors"
+
+  # === Fragment size QC outputs ===
+  fragment_size_histogram:
+    type: File?
+    outputSource: fragment_qc/histogram
+    doc: "Fragment size distribution histogram (PNG)"
+
+  fragment_size_table:
+    type: File?
+    outputSource: fragment_qc/table
+    doc: "Fragment size distribution summary table (TSV)"
 
   multiqc_report:
     type: File

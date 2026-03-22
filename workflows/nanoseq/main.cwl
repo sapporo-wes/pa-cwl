@@ -5,8 +5,10 @@ class: Workflow
 label: "nanoseq - Nanopore sequencing analysis pipeline"
 doc: |
   Long-read sequencing analysis pipeline for Oxford Nanopore data.
-  QC with NanoPlot, alignment with minimap2, optional variant calling
-  with medaka, and aggregated reporting with MultiQC.
+  QC with NanoPlot, optional quality filtering with NanoFilt,
+  alignment with minimap2, optional transcript assembly with StringTie2,
+  optional structural variant calling with Sniffles2, optional variant
+  calling with medaka, and aggregated reporting with MultiQC.
 
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
@@ -38,6 +40,22 @@ inputs:
     default: map-ont
     doc: "minimap2 preset: map-ont (DNA), splice (RNA), map-pb (PacBio CLR), map-hifi"
 
+  # === Quality filtering ===
+  run_nanofilt:
+    type: boolean?
+    default: false
+    doc: "Run NanoFilt quality filtering before alignment"
+
+  nanofilt_quality:
+    type: int?
+    default: 7
+    doc: "NanoFilt minimum average read quality score (default: 7)"
+
+  nanofilt_min_length:
+    type: int?
+    default: 200
+    doc: "NanoFilt minimum read length (default: 200)"
+
   # === Variant calling ===
   call_variants:
     type: boolean?
@@ -48,6 +66,22 @@ inputs:
     type: string?
     default: "r1041_e82_400bps_sup_variant_v4.3.0"
     doc: "Medaka model for variant calling"
+
+  # === Structural variant calling ===
+  call_structural_variants:
+    type: boolean?
+    default: false
+    doc: "Run Sniffles2 structural variant calling"
+
+  # === Transcript assembly ===
+  run_stringtie:
+    type: boolean?
+    default: false
+    doc: "Run StringTie2 transcript assembly"
+
+  stringtie_annotation:
+    type: File?
+    doc: "Reference annotation GTF for StringTie2 guided assembly"
 
 steps:
   # =====================
@@ -73,6 +107,20 @@ steps:
     out: [html_report, zip_report]
 
   # =====================
+  # NanoFilt quality filtering (conditional)
+  # =====================
+  quality_filtering:
+    run: steps/quality-filtering.cwl
+    when: $(inputs.run_nanofilt == true)
+    in:
+      fastqs: fastq
+      sample_ids: sample_ids
+      quality: nanofilt_quality
+      min_length: nanofilt_min_length
+      run_nanofilt: run_nanofilt
+    out: [filtered_fastqs]
+
+  # =====================
   # minimap2 alignment (per sample)
   # =====================
   minimap2:
@@ -80,7 +128,11 @@ steps:
     scatter: [reads, sample_id]
     scatterMethod: dotproduct
     in:
-      reads: fastq
+      reads:
+        source:
+          - quality_filtering/filtered_fastqs
+          - fastq
+        pickValue: first_non_null
       reference: reference
       sample_id: sample_ids
       preset: minimap2_preset
@@ -123,6 +175,32 @@ steps:
       model: medaka_model
       call_variants: call_variants
     out: [vcfs, stats]
+
+  # =====================
+  # StringTie2 transcript assembly (conditional)
+  # =====================
+  transcript_assembly:
+    run: steps/transcript-assembly.cwl
+    when: $(inputs.run_stringtie == true)
+    in:
+      bams: samtools_sort/sorted_bam
+      sample_ids: sample_ids
+      annotation: stringtie_annotation
+      run_stringtie: run_stringtie
+    out: [transcript_gtfs]
+
+  # =====================
+  # Sniffles2 structural variant calling (conditional)
+  # =====================
+  structural_variant_calling:
+    run: steps/structural-variant-calling.cwl
+    when: $(inputs.call_structural_variants == true)
+    in:
+      bams: samtools_sort/sorted_bam
+      sample_ids: sample_ids
+      reference: reference
+      call_structural_variants: call_structural_variants
+    out: [sv_vcfs]
 
   # =====================
   # MultiQC reporting
@@ -177,3 +255,18 @@ outputs:
     type: File[]?
     outputSource: variant_calling/stats
     doc: "bcftools stats on variant VCFs (when call_variants=true)"
+
+  filtered_fastqs:
+    type: File[]?
+    outputSource: quality_filtering/filtered_fastqs
+    doc: "NanoFilt quality-filtered FASTQ files (when run_nanofilt=true)"
+
+  transcript_gtfs:
+    type: File[]?
+    outputSource: transcript_assembly/transcript_gtfs
+    doc: "StringTie2 assembled transcripts in GTF format (when run_stringtie=true)"
+
+  structural_variant_vcfs:
+    type: File[]?
+    outputSource: structural_variant_calling/sv_vcfs
+    doc: "Sniffles2 structural variant VCF files (when call_structural_variants=true)"
