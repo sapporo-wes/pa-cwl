@@ -67,23 +67,9 @@ All 16 pipelines implemented and tested. Functional specifications derived from 
 
 ## For AI Agents
 
-Every workflow contains an `agent.yaml` that provides:
+Start with **[AGENTS.md](AGENTS.md)** — the top-level guide for AI agents. It provides the workflow catalog, WES API essentials, and provenance protocol.
 
-1. **Structured execution plan** — Deterministic steps with conditionals for input resolution and tool selection
-2. **Natural language hints** — Guidance for edge cases and user interaction
-3. **Input schema** — Typed parameters with descriptions, defaults, and resolution strategies
-4. **WES submission details** — Tested engines, resource requirements, and expected outputs
-
-### Quick Start (Agent)
-
-```
-1. Read workflows/<name>/agent.yaml
-2. Resolve user inputs (local files, SRA accessions, URLs)
-3. Generate CWL input object (YAML)
-4. Submit to WES endpoint: POST /runs
-5. Monitor: GET /runs/{run_id}/status
-6. Retrieve outputs on COMPLETE
-```
+Each workflow's `agent.yaml` contains the detailed execution plan, input schema with resolution strategies, and resource requirements.
 
 ## For Humans
 
@@ -100,8 +86,7 @@ cwltool workflows/rnaseq/main.cwl workflows/rnaseq/examples/star-salmon.yaml
 - **Phase 1** — 16 core pipelines (fetchngs through hic) — **Complete**
 - **Phase 2** — v1.1 enhancements — **Complete** (44 features across 12 pipelines)
 - **Phase 2.5** — v2.0 sarek somatic calling (Mutect2) + VEP annotation — **Complete**
-- **Phase 3** — MCP server for agent discovery, Python client library
-- **Phase 4** — Community contributions, workflow template generator
+- **Phase 3** — Agent guide (AGENTS.md) — **Complete**
 
 ## License
 

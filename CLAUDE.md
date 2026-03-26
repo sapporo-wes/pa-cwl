@@ -7,7 +7,7 @@ pa-cwl (Pretty Agentic CWL) — Production-ready CWL v1.2 workflows for AI-agent
 - CWL v1.2 (not v1.3-dev)
 - BioContainers (one container per tool)
 - Input resolution: fetchngs as separate workflow, analysis workflows stay pure
-- Agent interface: agent.yaml (MCP server planned for Phase 3)
+- Agent interface: agent.yaml + AGENTS.md (no wrapper library needed — agents read the WES OpenAPI spec directly)
 - Full feature parity with nf-core reference workflows
 - Single monorepo under sapporo-wes org
 - Testing: local sapporo-wes execution → RO-Crate → GH Actions evaluation → Zenodo test data
@@ -21,7 +21,7 @@ pa-cwl (Pretty Agentic CWL) — Production-ready CWL v1.2 workflows for AI-agent
 - `workflows/<name>/tests/` — Test inputs and expected outputs
 - `tools/` — Shared CWL CommandLineTools
 - `schemas/` — JSON Schema definitions
-- `lib/` — Python utilities (WES client, input resolver)
+- `AGENTS.md` — Top-level agent entry point (workflow catalog, WES API, provenance protocol)
 
 ## Workflow Development Guidelines
 - Write idiomatic CWL — do NOT transpile from Nextflow
