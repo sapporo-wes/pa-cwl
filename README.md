@@ -1,5 +1,7 @@
 # pa-cwl: Pretty Agentic CWL
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19233880.svg)](https://doi.org/10.5281/zenodo.19233880)
+
 Production-ready [Common Workflow Language](https://www.commonwl.org/) workflows designed for AI-agent execution via the [GA4GH Workflow Execution Service (WES)](https://ga4gh.github.io/workflow-execution-service-schemas/) API.
 
 ## What is this?
