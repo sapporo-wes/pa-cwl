@@ -121,14 +121,21 @@ jobs:
           python3 << 'PYEOF'
           import glob, json, sys
 
-          crate_files = sorted(glob.glob('workflows/*/tests/ro-crate/ro-crate-metadata.json'))
+          crate_files = sorted(
+              glob.glob('workflows/*/tests/ro-crate/ro-crate-metadata.json') +
+              glob.glob('workflows/*/tests/ro-crate/*/ro-crate-metadata.json')
+          )
           if not crate_files:
               print("ERROR: No RO-Crate files found")
               sys.exit(1)
 
           errors = []
           for path in crate_files:
-              pipeline = path.split('/')[1]
+              parts = path.split('/')
+              pipeline = parts[1]
+              # Include test name for per-test subdirectories
+              if len(parts) > 5:
+                  pipeline = f"{parts[1]}/{parts[4]}"
               try:
                   with open(path) as f:
                       data = json.load(f)
