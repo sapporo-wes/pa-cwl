@@ -1,0 +1,146 @@
+# Verified genome reference catalog for pa-cwl workflows
+# All URLs and paths have been verified to be accessible as of the verified_date.
+# Ensembl release 115 for main Ensembl organisms; Ensembl Plants release 62 for Arabidopsis.
+# iGenomes paths reference s3://ngi-igenomes (publicly accessible, no credentials required).
+
+# --- Tier 1: Human, Mouse, Yeast ---
+
+- organism: Homo sapiens
+  taxonomy_id: 9606
+  assembly: GRCh38
+  ensembl_release: 115
+  verified_date: "2026-03-27"
+  sources:
+    ensembl:
+      fasta: https://ftp.ensembl.org/pub/release-115/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+      gtf: https://ftp.ensembl.org/pub/release-115/gtf/homo_sapiens/Homo_sapiens.GRCh38.115.gtf.gz
+    igenomes:
+      base: s3://ngi-igenomes/igenomes/Homo_sapiens/GATK/GRCh38/
+      bwa_index: Sequence/BWAIndex/
+      bwamem2_index: Sequence/BWAmem2Index/
+      dragmap: Sequence/dragmap/
+      # Note: STARIndex directory exists but is empty; build from FASTA+GTF
+
+- organism: Mus musculus
+  taxonomy_id: 10090
+  assembly: GRCm39
+  ensembl_release: 115
+  verified_date: "2026-03-27"
+  sources:
+    ensembl:
+      fasta: https://ftp.ensembl.org/pub/release-115/fasta/mus_musculus/dna/Mus_musculus.GRCm39.dna.primary_assembly.fa.gz
+      gtf: https://ftp.ensembl.org/pub/release-115/gtf/mus_musculus/Mus_musculus.GRCm39.115.gtf.gz
+    igenomes:
+      # Note: iGenomes only has GRCm38, not GRCm39
+      base: s3://ngi-igenomes/igenomes/Mus_musculus/Ensembl/GRCm38/
+      igenomes_assembly: GRCm38
+      bwa_index: Sequence/BWAIndex/
+      bowtie2_index: Sequence/Bowtie2Index/
+      bismark_index: Sequence/BismarkIndex/
+      star_index: Sequence/STARIndex/
+
+- organism: Saccharomyces cerevisiae
+  taxonomy_id: 4932
+  assembly: R64-1-1
+  ensembl_release: 115
+  verified_date: "2026-03-27"
+  sources:
+    ensembl:
+      fasta: https://ftp.ensembl.org/pub/release-115/fasta/saccharomyces_cerevisiae/dna/Saccharomyces_cerevisiae.R64-1-1.dna.toplevel.fa.gz
+      gtf: https://ftp.ensembl.org/pub/release-115/gtf/saccharomyces_cerevisiae/Saccharomyces_cerevisiae.R64-1-1.115.gtf.gz
+    igenomes:
+      base: s3://ngi-igenomes/igenomes/Saccharomyces_cerevisiae/Ensembl/R64-1-1/
+      bwa_index: Sequence/BWAIndex/
+      bowtie2_index: Sequence/Bowtie2Index/
+      bismark_index: Sequence/BismarkIndex/
+      star_index: Sequence/STARIndex/
+
+# --- Tier 2: Rat, Zebrafish, Drosophila, C. elegans, Arabidopsis ---
+
+- organism: Rattus norvegicus
+  taxonomy_id: 10116
+  assembly: GRCr8
+  ensembl_release: 115
+  verified_date: "2026-03-27"
+  sources:
+    ensembl:
+      fasta: https://ftp.ensembl.org/pub/release-115/fasta/rattus_norvegicus/dna/Rattus_norvegicus.GRCr8.dna.toplevel.fa.gz
+      gtf: https://ftp.ensembl.org/pub/release-115/gtf/rattus_norvegicus/Rattus_norvegicus.GRCr8.115.gtf.gz
+    igenomes:
+      # Note: iGenomes has Rnor_6.0, not GRCr8
+      base: s3://ngi-igenomes/igenomes/Rattus_norvegicus/Ensembl/Rnor_6.0/
+      igenomes_assembly: Rnor_6.0
+      bwa_index: Sequence/BWAIndex/
+      bowtie2_index: Sequence/Bowtie2Index/
+      bismark_index: Sequence/BismarkIndex/
+      star_index: Sequence/STARIndex/
+
+- organism: Danio rerio
+  taxonomy_id: 7955
+  assembly: GRCz11
+  ensembl_release: 115
+  verified_date: "2026-03-27"
+  sources:
+    ensembl:
+      fasta: https://ftp.ensembl.org/pub/release-115/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.toplevel.fa.gz
+      gtf: https://ftp.ensembl.org/pub/release-115/gtf/danio_rerio/Danio_rerio.GRCz11.115.gtf.gz
+    igenomes:
+      # Note: iGenomes has GRCz10, not GRCz11
+      base: s3://ngi-igenomes/igenomes/Danio_rerio/Ensembl/GRCz10/
+      igenomes_assembly: GRCz10
+      bwa_index: Sequence/BWAIndex/
+      bowtie2_index: Sequence/Bowtie2Index/
+      bismark_index: Sequence/BismarkIndex/
+      star_index: Sequence/STARIndex/
+
+- organism: Drosophila melanogaster
+  taxonomy_id: 7227
+  assembly: BDGP6.54
+  ensembl_release: 115
+  verified_date: "2026-03-27"
+  sources:
+    ensembl:
+      fasta: https://ftp.ensembl.org/pub/release-115/fasta/drosophila_melanogaster/dna/Drosophila_melanogaster.BDGP6.54.dna.toplevel.fa.gz
+      gtf: https://ftp.ensembl.org/pub/release-115/gtf/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.54.115.gtf.gz
+    igenomes:
+      # Note: iGenomes has BDGP6, not BDGP6.54
+      base: s3://ngi-igenomes/igenomes/Drosophila_melanogaster/Ensembl/BDGP6/
+      igenomes_assembly: BDGP6
+      bwa_index: Sequence/BWAIndex/
+      bowtie2_index: Sequence/Bowtie2Index/
+      bismark_index: Sequence/BismarkIndex/
+      star_index: Sequence/STARIndex/
+
+- organism: Caenorhabditis elegans
+  taxonomy_id: 6239
+  assembly: WBcel235
+  ensembl_release: 115
+  verified_date: "2026-03-27"
+  sources:
+    ensembl:
+      fasta: https://ftp.ensembl.org/pub/release-115/fasta/caenorhabditis_elegans/dna/Caenorhabditis_elegans.WBcel235.dna.toplevel.fa.gz
+      gtf: https://ftp.ensembl.org/pub/release-115/gtf/caenorhabditis_elegans/Caenorhabditis_elegans.WBcel235.115.gtf.gz
+    igenomes:
+      base: s3://ngi-igenomes/igenomes/Caenorhabditis_elegans/Ensembl/WBcel235/
+      bwa_index: Sequence/BWAIndex/
+      bowtie2_index: Sequence/Bowtie2Index/
+      bismark_index: Sequence/BismarkIndex/
+      star_index: Sequence/STARIndex/
+
+- organism: Arabidopsis thaliana
+  taxonomy_id: 3702
+  assembly: TAIR10
+  ensembl_release: 62
+  ensembl_source: plants
+  verified_date: "2026-03-27"
+  sources:
+    ensembl:
+      # Arabidopsis is on Ensembl Plants, not main Ensembl
+      fasta: https://ftp.ensemblgenomes.org/pub/plants/release-62/fasta/arabidopsis_thaliana/dna/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz
+      gtf: https://ftp.ensemblgenomes.org/pub/plants/release-62/gtf/arabidopsis_thaliana/Arabidopsis_thaliana.TAIR10.62.gtf.gz
+    igenomes:
+      base: s3://ngi-igenomes/igenomes/Arabidopsis_thaliana/Ensembl/TAIR10/
+      bwa_index: Sequence/BWAIndex/
+      bowtie2_index: Sequence/Bowtie2Index/
+      bismark_index: Sequence/BismarkIndex/
+      star_index: Sequence/STARIndex/
