@@ -197,6 +197,43 @@ crash or hang under Apple Silicon Rosetta emulation:
 
 These are expected to pass on x86_64 Linux (CI/cloud environments).
 
+## End-to-End Test Results
+
+E2E tests validate the full agent-driven workflow: data discovery → fetchngs → analysis → provenance. See `docs/e2e-tests/` for scenario descriptions and `docs/e2e-tests/results/` for run logs.
+
+### Test 001: Kusako — Yeast Heat Shock RNA-seq Reanalysis
+
+**Scenario:** Undergraduate reanalyzes published RNA-seq data (PMID 32109230, GSE135568) to check TOR pathway gene expression under heat shock. Exercises: PMC text mining → TogoID ID conversion → fetchngs → rnaseq.
+
+**Run: 2026-03-29 — PASS**
+
+| | Machine | Duration |
+|-|---------|----------|
+| Platform | Apple M4 Pro, 64 GB RAM, arm64 (Docker x86 via Rosetta) | |
+| fetchngs | 2 SRA accessions, FTP download, 5.0 GB FASTQ | 51 min |
+| rnaseq | STAR (index built on-the-fly) + Salmon, 2 samples | 109 min |
+| **Total** | | **160 min** |
+
+Target gene results (raw counts):
+
+| Gene | 30°C (control) | 39°C (heat shock) | Fold change |
+|------|----------------|-------------------|-------------|
+| DAL5 (YJR152W) | 177 | 324 | 1.83× |
+| GAP1 (YKR039W) | 293 | 418 | 1.43× |
+| MEP2 (YNL142W) | 245 | 425 | 1.73× |
+
+All three nitrogen permease genes upregulated under heat shock. RO-Crate valid for both workflow runs (fetchngs: 43 entities, rnaseq: 75 entities).
+
+**Note:** Rosetta emulation adds ~3-5× overhead. Expect ~30-40 min for rnaseq on native x86_64 Linux.
+
+### Test 002: Kusako — Cross-Project AML Variant Meta-Analysis
+
+**Scenario:** Cross-project comparison of TP53 mutations in AML using WES data from multiple ENA studies. Exercises: ENA keyword search (with empty metadata fallback) → fetchngs → sarek.
+
+**Status:** Not yet run. See `docs/e2e-tests/002-kusako-aml-variant-meta-analysis.md` for scenario.
+
+---
+
 ### CWL bugs fixed during testing
 
 | Tool/Workflow | Bug | Fix |
