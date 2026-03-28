@@ -1,0 +1,11 @@
+genome_fasta:
+  class: File
+  path: ../../../test-data/yeast/genome.fa
+gtf:
+  class: File
+  path: ../../../test-data/yeast/genes.gtf
+build_star: true
+build_bwa: true
+build_bowtie2: false
+build_hisat2: false
+genome_sa_index_nbases: 10

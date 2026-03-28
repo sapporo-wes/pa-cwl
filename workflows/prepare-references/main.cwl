@@ -44,6 +44,10 @@ inputs:
     default: false
     doc: "Build HISAT2 genome index"
 
+  genome_sa_index_nbases:
+    type: int?
+    doc: "For small genomes, set to min(14, log2(GenomeLength)/2 - 1). Passed to STAR genomeGenerate."
+
 steps:
   samtools_faidx:
     run: ../../tools/samtools-faidx.cwl
@@ -57,6 +61,7 @@ steps:
     in:
       genome_fasta: genome_fasta
       gtf: gtf
+      genome_sa_index_nbases: genome_sa_index_nbases
       build_star: build_star
     out: [index_dir]
 
