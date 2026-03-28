@@ -1,0 +1,128 @@
+workflow: prepare-references
+description: |
+  Build genome reference indices for pa-cwl analysis workflows. Accepts a
+  genome FASTA and optionally GTF, then conditionally builds STAR, BWA-MEM2,
+  Bowtie2, and/or HISAT2 indices based on boolean flags.
+
+use_cases:
+  - "Build reference indices for a new organism not covered by iGenomes"
+  - "Prepare indices from a custom or modified genome assembly"
+  - "Generate only the specific aligner indices needed for a downstream workflow"
+
+inputs:
+  - id: genome_fasta
+    type: File
+    description: "Genome FASTA file to index"
+    required: true
+    resolve_from:
+      - local_path
+      - https_url
+
+  - id: gtf
+    type: File
+    description: "GTF annotation file (required for STAR index generation)"
+    required: false
+    resolve_from:
+      - local_path
+      - https_url
+
+  - id: build_star
+    type: boolean
+    description: "Build STAR genome index"
+    required: false
+    default: false
+
+  - id: build_bwa
+    type: boolean
+    description: "Build BWA-MEM2 genome index"
+    required: false
+    default: false
+
+  - id: build_bowtie2
+    type: boolean
+    description: "Build Bowtie2 genome index"
+    required: false
+    default: false
+
+  - id: build_hisat2
+    type: boolean
+    description: "Build HISAT2 genome index"
+    required: false
+    default: false
+
+outputs:
+  - id: indexed_fasta
+    type: File
+    description: "Samtools-indexed genome FASTA (.fai) and sequence dictionary (.dict)"
+
+  - id: star_index
+    type: Directory
+    description: "STAR genome index directory (produced only when build_star is true)"
+
+  - id: bwa_index
+    type: File
+    description: "BWA-MEM2 index files (produced only when build_bwa is true)"
+
+  - id: bowtie2_index
+    type: File
+    description: "Bowtie2 index files (produced only when build_bowtie2 is true)"
+
+  - id: hisat2_index
+    type: File
+    description: "HISAT2 index files (produced only when build_hisat2 is true)"
+
+execution_plan:
+  steps:
+    - id: determine_indices
+      action: ask_user
+      description: "Ask the user which aligner indices to build and collect the genome FASTA and optional GTF"
+      parameters:
+        prompt: "Which aligner indices do you need? Options: STAR, BWA-MEM2, Bowtie2, HISAT2. Also provide the genome FASTA file (path or URL) and GTF if building a STAR index."
+
+    - id: check_catalog
+      action: resolve_input
+      description: "Check whether pre-built indices are available in iGenomes or a known catalog before building from scratch"
+      parameters:
+        catalogs:
+          - iGenomes
+
+    - id: generate_inputs
+      action: generate_input_object
+      description: "Generate CWL input YAML with genome FASTA, GTF, and boolean flags for each requested index"
+
+    - id: submit
+      action: submit_wes
+      description: "Submit prepare-references workflow to WES endpoint"
+      parameters:
+        workflow_url: "workflows/prepare-references/main.cwl"
+
+    - id: monitor
+      action: poll_status
+      description: "Poll WES run status. STAR indexing for human genome can take 30-60 minutes."
+      parameters:
+        poll_interval_seconds: 60
+
+    - id: collect
+      action: retrieve_outputs
+      description: "Retrieve generated index files and verify completeness"
+
+hints: |
+  - STAR genome generation requires ~32 GB RAM for the human genome. Ensure the
+    execution environment has sufficient memory before submitting.
+  - BWA-MEM2 indexing requires ~16 GB RAM for the human genome.
+  - Check iGenomes or other pre-built index catalogs first to avoid unnecessary
+    computation — many common genomes already have indices available.
+  - GTF annotation is required when building a STAR index. If the user requests
+    STAR but has not provided a GTF, prompt them for it before submission.
+  - CWL resolves HTTPS URLs natively, so remote FASTA/GTF files can be provided
+    as URLs without manual download.
+
+wes:
+  tested_engines:
+    - cwltool
+  workflow_type: CWL
+  workflow_type_version: v1.2
+  resource_hints:
+    min_ram_gb: 32
+    min_cores: 8
+    estimated_storage_gb: 100
