@@ -22,6 +22,7 @@ This repository contains 16 production-ready CWL v1.2 bioinformatics workflows. 
 | scrnaseq | Single-cell RNA-seq | `workflows/scrnaseq/agent.yaml` |
 | taxprofiler | Taxonomic profiling | `workflows/taxprofiler/agent.yaml` |
 | viralrecon | Viral variant calling and consensus | `workflows/viralrecon/agent.yaml` |
+| prepare-references | Build genome indices (STAR, BWA, Bowtie2, HISAT2) | `workflows/prepare-references/agent.yaml` |
 
 ## How to Run a Workflow
 
@@ -101,8 +102,31 @@ Each `agent.yaml` lists `resolve_from` strategies for its inputs. Common pattern
 | `bioproject_accession` | Run `fetchngs` with a BioProject ID |
 | `https_url` | Download from a URL |
 | `s3_uri` / `gcp_uri` | Cloud storage paths |
+| `genome_catalog` | Look up organism in references/genomes.yaml |
 
 When the user provides SRA accessions, chain `fetchngs` first, then pass its outputs to the analysis workflow. The `dependencies` field in agent.yaml indicates when this chaining is needed.
+
+## Finding Public Data
+
+When the researcher needs to find public sequencing data, see [docs/data-discovery.md](docs/data-discovery.md) for the full guide. Summary:
+
+1. **Have a paper or dataset ID?** Use [TogoID](https://togoid.dbcls.jp) to convert PubMed, BioProject, BioSample, or GEO IDs to SRA run accessions.
+2. **Know the organism and assay type?** Search the [ENA Portal API](https://www.ebi.ac.uk/ena/portal/api/) by taxonomy and library strategy.
+3. **ENA doesn't have it?** Fall back to [NCBI E-utilities](https://www.ncbi.nlm.nih.gov/books/NBK25499/) esearch/efetch.
+
+All accession lists feed into the `fetchngs` workflow to download FASTQ files.
+
+## Reference Genomes
+
+When a workflow needs a genome reference, see [references/README.md](references/README.md) for the full guide and [references/genomes.yaml](references/genomes.yaml) for the verified genome catalog.
+
+**Decision tree:**
+1. Look up organism in `references/genomes.yaml` (8 common organisms with verified Ensembl + iGenomes URLs)
+2. If iGenomes has pre-built indices for the needed type → download with `aws s3 cp --no-sign-request`
+3. If not → pass Ensembl HTTPS URLs to the `prepare-references` workflow to build indices
+4. Organism not in catalog → query `https://rest.ensembl.org/info/genomes/{name}?content-type=application/json`
+
+See the workflow-to-index mapping in [references/README.md](references/README.md) to know which indices each workflow needs.
 
 ## Reference
 

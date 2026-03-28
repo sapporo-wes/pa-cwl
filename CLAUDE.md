@@ -21,6 +21,7 @@ pa-cwl (Pretty Agentic CWL) — Production-ready CWL v1.2 workflows for AI-agent
 - `workflows/<name>/tests/` — Test inputs and expected outputs
 - `tools/` — Shared CWL CommandLineTools
 - `schemas/` — JSON Schema definitions
+- `references/` — Genome catalog and agent guide for reference resolution
 - `AGENTS.md` — Top-level agent entry point (workflow catalog, WES API, provenance protocol)
 
 ## Workflow Development Guidelines
