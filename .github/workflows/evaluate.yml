@@ -197,8 +197,8 @@ jobs:
                   if not url:
                       continue
                   result = subprocess.run(
-                      ['curl', '-sI', '-o', '/dev/null', '-w', '%{http_code}', url],
-                      capture_output=True, text=True, timeout=30
+                      ['curl', '-skI', '-o', '/dev/null', '-w', '%{http_code}', '--max-time', '30', url],
+                      capture_output=True, text=True, timeout=60
                   )
                   code = result.stdout.strip()
                   if code in ('200', '226', '301', '302'):
