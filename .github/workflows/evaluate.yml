@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly on Monday 06:00 UTC
 
 jobs:
   validate-cwl:
@@ -163,4 +165,84 @@ jobs:
               print(e)
           if errors:
               sys.exit(1)
+          PYEOF
+
+  validate-references:
+    name: Validate reference URLs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Check Ensembl URLs
+        run: |
+          python3 << 'PYEOF'
+          import yaml, subprocess, sys
+
+          with open('references/genomes.yaml') as f:
+              genomes = yaml.safe_load(f)
+
+          errors = []
+          for g in genomes:
+              name = f"{g['organism']} ({g['assembly']})"
+              for key in ['fasta', 'gtf']:
+                  url = g.get('sources', {}).get('ensembl', {}).get(key)
+                  if not url:
+                      continue
+                  result = subprocess.run(
+                      ['curl', '-sI', '-o', '/dev/null', '-w', '%{http_code}', url],
+                      capture_output=True, text=True, timeout=30
+                  )
+                  code = result.stdout.strip()
+                  if code in ('200', '226', '301', '302'):
+                      print(f'OK: {name} {key} ({code})')
+                  else:
+                      errors.append(f'FAIL: {name} {key} -> HTTP {code}')
+                      print(f'FAIL: {name} {key} -> HTTP {code}')
+
+          print(f'\n{len(genomes)} genomes checked, {len(errors)} errors')
+          if errors:
+              for e in errors:
+                  print(e)
+              sys.exit(1)
+          PYEOF
+
+      - name: Check iGenomes S3 paths
+        run: |
+          python3 << 'PYEOF'
+          import yaml, subprocess, sys
+
+          with open('references/genomes.yaml') as f:
+              genomes = yaml.safe_load(f)
+
+          errors = []
+          for g in genomes:
+              name = f"{g['organism']} ({g['assembly']})"
+              igenomes = g.get('sources', {}).get('igenomes', {})
+              base = igenomes.get('base')
+              if not base:
+                  continue
+              result = subprocess.run(
+                  ['aws', 's3', 'ls', '--no-sign-request', base],
+                  capture_output=True, text=True, timeout=30
+              )
+              if result.returncode == 0:
+                  print(f'OK: {name} iGenomes base')
+              else:
+                  errors.append(f'FAIL: {name} iGenomes base not accessible')
+                  print(f'FAIL: {name} iGenomes base not accessible')
+
+          if errors:
+              for e in errors:
+                  print(e)
+              sys.exit(1)
+          else:
+              print(f'\nAll iGenomes paths verified')
           PYEOF
