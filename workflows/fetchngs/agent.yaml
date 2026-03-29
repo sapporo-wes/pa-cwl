@@ -31,9 +31,9 @@ inputs:
 
   - id: download_method
     type: enum
-    description: "Download method"
-    options: [ftp, sratools]
-    default: ftp
+    description: "Download method: aria2 (fast multi-connection with auto mirror selection), ftp (single-connection with MD5 verification), sratools (fasterq-dump)"
+    options: [aria2, ftp, sratools]
+    default: aria2
 
 outputs:
   - id: fastq_files
@@ -60,10 +60,10 @@ execution_plan:
 
     - id: select_method
       action: select_option
-      description: "Select download method: ftp (ENA FTP with MD5) or sratools (fasterq-dump)"
+      description: "Select download method: aria2 (recommended, fast multi-connection with auto mirror selection), ftp (ENA FTP with MD5), or sratools (fasterq-dump)"
       parameters:
         input_id: download_method
-        default: ftp
+        default: aria2
 
     - id: generate_inputs
       action: generate_input_object

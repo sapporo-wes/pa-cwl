@@ -5,7 +5,11 @@ class: Workflow
 label: "fetchngs - Fetch sequencing data from public repositories"
 doc: |
   Downloads FASTQ files and metadata from SRA/ENA/DDBJ given accession numbers.
-  Supports FTP download with md5 verification, or SRA-tools fasterq-dump.
+  Three download methods:
+    - aria2 (recommended): multi-connection parallel download via aria2c with
+      automatic mirror selection (DDBJ/ENA/NCBI latency test)
+    - ftp: single-connection FTP download with md5 verification
+    - sratools: NCBI fasterq-dump
   Produces a samplesheet CSV compatible with downstream pa-cwl analysis workflows.
   Part of the pa-cwl (Pretty Agentic CWL) collection.
 
@@ -14,6 +18,7 @@ requirements:
   ScatterFeatureRequirement: {}
   InlineJavascriptRequirement: {}
   MultipleInputFeatureRequirement: {}
+  StepInputExpressionRequirement: {}
 
 inputs:
   accessions:
@@ -24,10 +29,11 @@ inputs:
     type:
       type: enum
       symbols:
+        - aria2
         - ftp
         - sratools
-    default: ftp
-    doc: "Download method: ftp (wget with md5 verification) or sratools (fasterq-dump)"
+    default: aria2
+    doc: "Download method: aria2 (fast multi-connection, auto mirror selection), ftp (single-connection), or sratools (fasterq-dump)"
 
 steps:
   fetch_metadata:
@@ -36,6 +42,26 @@ steps:
       accessions: accessions
     out: [metadata_json, metadata_tsv]
     doc: "Query ENA API for run metadata and FTP download URLs"
+
+  check_mirror:
+    run: steps/check-mirror-latency.cwl
+    when: $(inputs.download_method == "aria2")
+    in:
+      download_method: download_method
+    out: [preferred_source, mirror_latency]
+    doc: "Measure latency to DDBJ/ENA/NCBI and pick fastest mirror"
+
+  download_aria2:
+    run: steps/download-fastq-aria2.cwl
+    when: $(inputs.download_method == "aria2")
+    in:
+      metadata_json: fetch_metadata/metadata_json
+      preferred_source:
+        source: check_mirror/preferred_source
+        valueFrom: $(self || "ena")
+      download_method: download_method
+    out: [fastq_files]
+    doc: "Download FASTQ files via aria2c with 8 parallel connections from fastest mirror"
 
   download_ftp:
     run: steps/download-fastq-ftp.cwl
@@ -66,6 +92,7 @@ outputs:
   fastq_files:
     type: File[]
     outputSource:
+      - download_aria2/fastq_files
       - download_ftp/fastq_files
       - download_sratools/fastq_files
     pickValue: first_non_null
