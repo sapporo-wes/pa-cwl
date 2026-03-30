@@ -227,6 +227,17 @@ All three nitrogen permease genes upregulated under heat shock. RO-Crate valid f
 
 **Note:** Rosetta emulation adds ~3-5× overhead. Expect ~30-40 min for rnaseq on native x86_64 Linux.
 
+**Run: 2026-03-30 (aria2 re-run) — PASS**
+
+| | Machine | Duration |
+|-|---------|----------|
+| Platform | Apple M4 Pro, 64 GB RAM, arm64 (Docker x86 via Rosetta) | |
+| fetchngs | 2 SRA accessions, **aria2 download** (auto mirror → ENA FTP fallback), 5.0 GB FASTQ | **13 min** |
+| rnaseq | STAR (index built on-the-fly) + Salmon, 2 samples | 109 min |
+| **Total** | | **122 min** |
+
+aria2c multi-connection download reduced fetchngs from 51 min to 13 min (**3.9× speedup**). Same gene expression results as FTP run.
+
 ### Test 002: Kusako — Cross-Project AML Variant Meta-Analysis
 
 **Scenario:** Cross-project comparison of TP53 mutations in AML using WES data from multiple ENA studies. Exercises: ENA keyword search (with empty metadata fallback) → fetchngs → sarek.
